@@ -2,7 +2,11 @@ import { Home, Plus, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
-export function BottomNav() {
+interface BottomNavProps {
+  onAddClick?: () => void;
+}
+
+export function BottomNav({ onAddClick }: BottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,7 +26,7 @@ export function BottomNav() {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => onAddClick ? onAddClick() : navigate(item.path)}
               className="fab-button text-primary-foreground -mt-8 transition-transform hover:scale-105 active:scale-95"
             >
               <Icon size={24} />

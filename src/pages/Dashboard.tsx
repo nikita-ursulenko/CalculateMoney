@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2 } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -13,10 +14,16 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { settings, loading: settingsLoading } = useSettings();
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);
   const { toast } = useToast();
+
+  const handleAddEntry = () => {
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    navigate(`/add?date=${dateStr}`);
+  };
 
   const loading = settingsLoading || entriesLoading;
 
@@ -193,7 +200,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <BottomNav />
+      <BottomNav onAddClick={handleAddEntry} />
     </div>
   );
 }

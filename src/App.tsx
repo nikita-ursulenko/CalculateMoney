@@ -77,6 +77,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/edit/:id"
+        element={
+          <ProtectedRoute>
+            <AddEntry />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <ProtectedRoute>

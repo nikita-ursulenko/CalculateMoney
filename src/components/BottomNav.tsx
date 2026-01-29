@@ -1,4 +1,4 @@
-import { Home, Plus, Settings } from 'lucide-react';
+import { Home, Plus, Settings, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -23,13 +23,27 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
         const Icon = item.icon;
 
         if (item.isFab) {
+          const isAddOrEdit = location.pathname.includes('/add') || location.pathname.includes('/edit');
+          const FinalIcon = isAddOrEdit ? X : Icon;
+
           return (
             <button
               key={item.path}
-              onClick={() => onAddClick ? onAddClick() : navigate(item.path)}
-              className="fab-button text-primary-foreground -mt-8 transition-transform hover:scale-105 active:scale-95"
+              onClick={() => {
+                if (isAddOrEdit) {
+                  navigate('/dashboard');
+                } else if (onAddClick) {
+                  onAddClick();
+                } else {
+                  navigate(item.path);
+                }
+              }}
+              className={cn(
+                "fab-button text-primary-foreground -mt-8 transition-all duration-300 hover:scale-105 active:scale-95",
+                isAddOrEdit && "!bg-none !bg-destructive hover:!bg-destructive/90 rotate-90"
+              )}
             >
-              <Icon size={24} />
+              <FinalIcon size={24} />
             </button>
           );
         }

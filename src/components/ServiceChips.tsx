@@ -8,8 +8,6 @@ interface ServiceChipsProps {
 const services = [
   { id: 'manicure', label: 'Маникюр' },
   { id: 'pedicure', label: 'Педикюр' },
-  { id: 'removal', label: 'Снятие' },
-  { id: 'design', label: 'Дизайн' },
   { id: 'other', label: 'Другое' },
 ];
 

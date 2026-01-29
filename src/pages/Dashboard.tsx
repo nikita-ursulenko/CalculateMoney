@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, addDays, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2, Plus } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
+import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2, Plus, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,24 +16,29 @@ import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: undefined,
+  });
+  const [showIncome, setShowIncome] = useState(true);
   const { settings, loading: settingsLoading } = useSettings();
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);
   const { toast } = useToast();
 
   const handleAddEntry = () => {
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const targetDate = selectedDate?.from || new Date();
+    const dateStr = format(targetDate, 'yyyy-MM-dd');
     navigate(`/add?date=${dateStr}`);
   };
 
   const loading = settingsLoading || entriesLoading;
 
   // Get rates from settings
-  const rateCash = settings?.use_different_rates 
-    ? Number(settings.rate_cash) 
+  const rateCash = settings?.use_different_rates
+    ? Number(settings.rate_cash)
     : Number(settings?.rate_general || 40);
-  const rateCard = settings?.use_different_rates 
-    ? Number(settings.rate_card) 
+  const rateCard = settings?.use_different_rates
+    ? Number(settings.rate_card)
     : Number(settings?.rate_general || 40);
 
   // Calculate daily balance
@@ -43,20 +49,33 @@ export default function Dashboard() {
       const isCash = entry.payment_method === 'cash';
       const rate = isCash ? rateCash : rateCard;
 
+      const tipsPaymentMethod = entry.tips_payment_method || 'cash';
+
       // Balance calculation
-      const balanceChange = isCash 
+      // Service part
+      const serviceBalance = isCash
         ? -(price * (1 - rate / 100))
         : price * (rate / 100);
 
-      // Income = commission + tips
-      const income = isCash 
-        ? (price * rate / 100) + tips
-        : (price * rate / 100) + tips;
+      // Tips part
+      const tipsBalance = tipsPaymentMethod === 'cash'
+        ? 0 // Master keeps cash tips
+        : tips * (rateCard / 100); // Salon owes master percentage for card tips
+
+      const balanceChange = serviceBalance + tipsBalance;
+
+      // Income calculation
+      const serviceIncome = price * (rate / 100);
+      const tipsIncome = tipsPaymentMethod === 'cash'
+        ? tips
+        : tips * (rateCard / 100);
+
+      const income = serviceIncome + tipsIncome;
 
       return {
         balance: acc.balance + balanceChange,
         income: acc.income + income,
-        tipsTotal: acc.tipsTotal + tips,
+        tipsTotal: acc.tipsTotal + tipsIncome,
       };
     },
     { balance: 0, income: 0, tipsTotal: 0 }
@@ -81,47 +100,85 @@ export default function Dashboard() {
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(newDate);
+    if (!selectedDate?.from) return;
+
+    const days = direction === 'next' ? 1 : -1;
+    const newFrom = addDays(selectedDate.from, days);
+
+    let newTo = undefined;
+    if (selectedDate.to) {
+      newTo = addDays(selectedDate.to, days);
+    }
+
+    setSelectedDate({ from: newFrom, to: newTo });
+  };
+
+  const handleDateSelect = (range: DateRange | undefined, selectedDay: Date) => {
+    // 1. If we already have a complete range (from and to), any click should start a NEW selection
+    if (selectedDate?.from && selectedDate?.to) {
+      setSelectedDate({ from: selectedDay, to: undefined });
+      return;
+    }
+
+    // 2. If range is undefined (deselection attempt), strictly select the clicked day
+    if (!range?.from) {
+      setSelectedDate({ from: selectedDay, to: undefined });
+      return;
+    }
+
+    // 3. If standard selection (e.g. picking second date)
+    // Check if checks/logic resulted in same day for both
+    if (range.to && isSameDay(range.from, range.to)) {
+      setSelectedDate({ from: range.from, to: undefined });
+    } else {
+      setSelectedDate(range);
+    }
   };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Header */}
-      <header className="px-5 pt-8 pb-4">
-        <h1 className="text-2xl font-display font-bold text-foreground animate-fade-in">
-          Привет, {settings?.master_name || 'Мастер'} 👋
-        </h1>
-      </header>
+      {/* Header removed */}
+      <div className="pt-6" />
 
       {/* Date Selector */}
-      <div className="px-5 mb-6">
-        <div className="flex items-center justify-between bg-card rounded-xl p-2 shadow-sm">
+      <div className="px-5 mb-4">
+        <div className="flex items-center justify-between bg-card rounded-xl p-1.5 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigateDate('prev')}
-            className="rounded-lg"
+            className="rounded-lg h-8 w-8"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </Button>
 
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
-                className="font-medium text-foreground hover:bg-secondary"
+                className="font-medium text-foreground hover:bg-secondary h-8 text-sm"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {selectedDate?.from ? (
+                  selectedDate.to && !isSameDay(selectedDate.from, selectedDate.to) ? (
+                    <>
+                      {format(selectedDate.from, 'd MMM', { locale: ru })} -{' '}
+                      {format(selectedDate.to, 'd MMM', { locale: ru })}
+                    </>
+                  ) : (
+                    format(selectedDate.from, 'EEEE, d MMMM', { locale: ru })
+                  )
+                ) : (
+                  <span>Выберите дату</span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="center">
               <Calendar
-                mode="single"
+                mode="range"
+                defaultMonth={selectedDate?.from}
                 selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
+                onSelect={handleDateSelect}
                 locale={ru}
               />
             </PopoverContent>
@@ -131,62 +188,73 @@ export default function Dashboard() {
             variant="ghost"
             size="icon"
             onClick={() => navigateDate('next')}
-            className="rounded-lg"
+            className="rounded-lg h-8 w-8"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </Button>
         </div>
       </div>
 
       {/* Balance Card */}
-      <div className="px-5 mb-6">
+      <div className="px-5 mb-4">
         <div className={cn(
-          'balance-card animate-scale-in',
+          'balance-card animate-scale-in relative',
           isPositiveBalance ? 'balance-positive' : 'balance-negative'
         )}>
-          <p className="text-sm text-muted-foreground mb-2">Баланс дня</p>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground"
+            onClick={() => setShowIncome(!showIncome)}
+          >
+            {showIncome ? <Eye size={18} /> : <EyeOff size={18} />}
+          </Button>
+
+          <p className="text-sm text-muted-foreground mb-2">Баланс за период</p>
           <p className={cn(
             'text-3xl font-bold mb-3',
             isPositiveBalance ? 'text-success' : 'text-destructive'
           )}>
             {isPositiveBalance ? (
-              <>Салон должен тебе: €{dailyStats.balance.toFixed(2)}</>
+              <>Итого к вам: €{dailyStats.balance.toFixed(2)}</>
             ) : (
-              <>Ты должна салону: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+              <>Итого от вас: €{Math.abs(dailyStats.balance).toFixed(2)}</>
             )}
           </p>
-          
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <TrendingUp size={16} className="text-success" />
-            <span className="text-success font-medium">
-              Твой доход сегодня: €{dailyStats.income.toFixed(2)}
-            </span>
-            {dailyStats.tipsTotal > 0 && (
-              <span className="text-muted-foreground">
-                (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
+
+          {showIncome && (
+            <div className="flex items-center justify-center gap-2 text-sm animate-fade-in">
+              <TrendingUp size={16} className="text-success" />
+              <span className="text-success font-medium">
+                Твой доход: €{dailyStats.income.toFixed(2)}
               </span>
-            )}
-          </div>
+              {dailyStats.tipsTotal > 0 && (
+                <span className="text-muted-foreground">
+                  (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Entries List */}
       <div className="px-5">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">
-          Записи за день
+        <h2 className="text-base font-semibold mb-3 text-foreground">
+          Записи на {format(selectedDate?.from || new Date(), 'EEEE, d MMMM', { locale: ru })}
         </h2>
-        
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground animate-fade-in">
-            <p className="text-lg mb-2">Нет записей</p>
-            <p className="text-sm">Нажмите + чтобы добавить первую запись</p>
+            <p className="text-base mb-1">Нет записей</p>
+            <p className="text-xs">Нажмите + чтобы добавить первую запись</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {entries.map((entry) => (
               <EntryCard
                 key={entry.id}
@@ -194,6 +262,8 @@ export default function Dashboard() {
                 rateCash={rateCash}
                 rateCard={rateCard}
                 onDelete={handleDeleteEntry}
+                showTips={showIncome}
+                onClick={() => navigate(`/edit/${entry.id}`)}
               />
             ))}
           </div>

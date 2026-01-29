@@ -76,24 +76,24 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
-      <header className="px-5 pt-8 pb-6 flex items-center gap-4">
+      <header className="px-5 pt-6 pb-4 flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate('/dashboard')}
-          className="rounded-xl"
+          className="rounded-xl h-10 w-10"
         >
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="text-2xl font-display font-bold text-foreground">
+        <h1 className="text-xl font-display font-bold text-foreground">
           Настройки
         </h1>
       </header>
 
-      <div className="px-5 space-y-6">
+      <div className="px-5 space-y-4">
         {/* Master Name */}
-        <div className="space-y-2 animate-fade-in">
-          <Label htmlFor="masterName" className="text-base font-medium">
+        <div className="space-y-1.5 animate-fade-in">
+          <Label htmlFor="masterName" className="text-sm font-medium">
             Имя мастера
           </Label>
           <Input
@@ -102,7 +102,7 @@ export default function SettingsPage() {
             placeholder="Как вас зовут?"
             value={masterName}
             onChange={(e) => setMasterName(e.target.value)}
-            className="input-beauty h-14"
+            className="input-beauty h-12"
           />
         </div>
 
@@ -180,14 +180,14 @@ export default function SettingsPage() {
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <Button
             onClick={handleSave}
-            className="w-full h-14 btn-primary-gradient rounded-xl text-lg"
+            className="w-full h-12 btn-primary-gradient rounded-xl text-base"
             disabled={saving}
           >
             {saving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                <Save className="mr-2 h-5 w-5" />
+                <Save className="mr-2 h-4 w-4" />
                 Сохранить
               </>
             )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { format, parse } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,11 @@ import { useEntries } from '@/hooks/useEntries';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AddEntry() {
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const selectedDate = dateParam 
+    ? parse(dateParam, 'yyyy-MM-dd', new Date()) 
+    : new Date();
   const navigate = useNavigate();
   const { addEntry } = useEntries();
   const { toast } = useToast();
@@ -43,7 +49,7 @@ export default function AddEntry() {
       tips: parseFloat(tips) || 0,
       payment_method: paymentMethod,
       client_name: clientName,
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: format(selectedDate, 'yyyy-MM-dd'),
     });
 
     if (error) {
@@ -75,9 +81,14 @@ export default function AddEntry() {
         >
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="text-2xl font-display font-bold text-foreground">
-          Новая запись
-        </h1>
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            Новая запись
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
+          </p>
+        </div>
       </header>
 
       <form onSubmit={handleSubmit} className="px-5 space-y-6">

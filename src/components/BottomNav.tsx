@@ -51,7 +51,10 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
         return (
           <button
             key={item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => {
+              const direction = item.path === '/settings' ? 'forward' : 'back';
+              navigate(item.path, { state: { direction } });
+            }}
             className={cn('nav-item', isActive && 'nav-item-active')}
           >
             <Icon size={22} />

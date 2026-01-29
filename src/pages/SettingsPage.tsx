@@ -80,7 +80,7 @@ export default function SettingsPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/dashboard', { state: { direction: 'back' } })}
           className="rounded-xl h-10 w-10"
         >
           <ArrowLeft size={20} />
@@ -90,7 +90,7 @@ export default function SettingsPage() {
         </h1>
       </header>
 
-      <div className="px-5 space-y-4">
+      <div className="px-5 space-y-4 animate-slide-up">
         {/* Master Name */}
         <div className="space-y-1.5 animate-fade-in">
           <Label htmlFor="masterName" className="text-sm font-medium">
@@ -107,7 +107,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Rate Toggle */}
-        <div className="bg-card rounded-xl p-4 space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="bg-card rounded-xl p-4 space-y-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Разный процент</p>

@@ -198,13 +198,13 @@ export default function Dashboard() {
       {/* Balance Card */}
       <div className="px-5 mb-4">
         <div className={cn(
-          'balance-card animate-scale-in relative',
+          'balance-card animate-slide-up relative bg-card', // Added animate-slide-up
           isPositiveBalance ? 'balance-positive' : 'balance-negative'
         )}>
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground"
+            className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground transition-transform hover:scale-105"
             onClick={() => setShowIncome(!showIncome)}
           >
             {showIncome ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -212,7 +212,7 @@ export default function Dashboard() {
 
           <p className="text-sm text-muted-foreground mb-2">Баланс за период</p>
           <p className={cn(
-            'text-3xl font-bold mb-3',
+            'text-3xl font-bold mb-3 transition-colors duration-500',
             isPositiveBalance ? 'text-success' : 'text-destructive'
           )}>
             {isPositiveBalance ? (
@@ -240,7 +240,7 @@ export default function Dashboard() {
 
       {/* Entries List */}
       <div className="px-5">
-        <h2 className="text-base font-semibold mb-3 text-foreground">
+        <h2 className="text-base font-semibold mb-3 text-foreground animate-fade-in">
           Записи на {format(selectedDate?.from || new Date(), 'EEEE, d MMMM', { locale: ru })}
         </h2>
 
@@ -255,16 +255,21 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-2">
-            {entries.map((entry) => (
-              <EntryCard
+            {entries.map((entry, index) => (
+              <div
                 key={entry.id}
-                entry={entry}
-                rateCash={rateCash}
-                rateCard={rateCard}
-                onDelete={handleDeleteEntry}
-                showTips={showIncome}
-                onClick={() => navigate(`/edit/${entry.id}`)}
-              />
+                className="animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
+              >
+                <EntryCard
+                  entry={entry}
+                  rateCash={rateCash}
+                  rateCard={rateCard}
+                  onDelete={handleDeleteEntry}
+                  showTips={showIncome}
+                  onClick={() => navigate(`/edit/${entry.id}`)}
+                />
+              </div>
             ))}
           </div>
         )}

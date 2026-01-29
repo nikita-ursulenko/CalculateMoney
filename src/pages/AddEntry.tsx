@@ -144,7 +144,7 @@ export default function AddEntry() {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="px-5 space-y-4">
+      <form onSubmit={handleSubmit} className="px-5 space-y-4 animate-slide-up">
         {/* Client Name */}
         <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.25s' }}>
           <Label htmlFor="clientName" className="text-sm font-medium">

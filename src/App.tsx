@@ -49,51 +49,70 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { PageWrapper } from "@/components/PageWrapper";
+
 function AppRoutes() {
+  const location = useLocation();
+  const direction = location.state?.direction || 'none';
+
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <AuthPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/add"
-        element={
-          <ProtectedRoute>
-            <AddEntry />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/edit/:id"
-        element={
-          <ProtectedRoute>
-            <AddEntry />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AnimatePresence mode="wait" custom={direction}>
+      <Routes location={location} key={location.pathname}>
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <PageWrapper>
+                <AuthPage />
+              </PageWrapper>
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <PageWrapper>
+                <Dashboard />
+              </PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/add"
+          element={
+            <ProtectedRoute>
+              <PageWrapper>
+                <AddEntry />
+              </PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit/:id"
+          element={
+            <ProtectedRoute>
+              <PageWrapper>
+                <AddEntry />
+              </PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <PageWrapper>
+                <SettingsPage />
+              </PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

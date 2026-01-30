@@ -315,9 +315,9 @@ export default function Dashboard() {
             isPositiveBalance ? 'text-success' : 'text-destructive'
           )}>
             {isPositiveBalance ? (
-              <>Итого к вам: €{dailyStats.balance.toFixed(2)}</>
+              <>Долг салону: €{dailyStats.balance.toFixed(2)}</>
             ) : (
-              <>Итого от вас: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+              <>Долг мне: €{Math.abs(dailyStats.balance).toFixed(2)}</>
             )}
           </p>
 
@@ -362,7 +362,7 @@ export default function Dashboard() {
             <p className="text-xs">Нажмите + чтобы добавить первую запись</p>
           </div>
         ) : (
-          <div className="pb-20 grid grid-cols-2 gap-3">
+          <div className="pb-20 space-y-3">
             {entries.map((entry, index) => (
               <div
                 key={entry.id}

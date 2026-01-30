@@ -26,15 +26,12 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
   const isCash = entry.payment_method === 'cash';
   const rate = isCash ? rateCash : rateCard;
 
-  // Расчет баланса по логике
   // Calculate Service Balance
   let balance = isCash
     ? -(entry.price * (1 - rate / 100)) // Master owes Salon
     : entry.price * (rate / 100); // Salon owes Master
 
   // Calculate Tips Balance
-  // If tips are cash, Master keeps 100% (no impact on balance with salon)
-  // If tips are card, Salon receives them, so Salon owes Master (rateCard applied)
   if (entry.tips > 0 && entry.tips_payment_method === 'card') {
     balance += entry.tips * (rateCard / 100);
   }
@@ -48,71 +45,68 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
   };
 
   return (
-    <div className="entry-card animate-fade-in">
-      <div className="flex flex-col gap-2 relative">
-        <div className="flex-1 cursor-pointer" onClick={onClick}>
+    <div className="entry-card animate-fade-in py-2 px-3">
+      <div className="flex items-center gap-3">
 
-          {/* Top Row: Service + Icons */}
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-1">
-              <span className="service-chip service-chip-active text-[10px] py-0.5 px-2">
+        {/* Left: Info */}
+        <div className="flex-1 flex items-center gap-3 cursor-pointer overflow-hidden" onClick={onClick}>
+          {/* Icon */}
+          <div className={`shrink-0 p-2 rounded-full ${isCash ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+            {isCash ? <Banknote size={16} /> : <CreditCard size={16} />}
+          </div>
+
+          {/* Texts */}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm text-foreground truncate">
+                {entry.client_name || 'Без имени'}
+              </span>
+              {(showTips || entry.tips_payment_method === 'card') && entry.tips > 0 && (
+                <div className="flex items-center text-success text-[10px] font-bold bg-success/10 px-1 rounded">
+                  +€{Number(entry.tips).toFixed(0)}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 pt-0.5">
+              <span className="text-[11px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md whitespace-nowrap">
                 {serviceLabels[entry.service] || entry.service}
               </span>
               {entry.recipient_role && entry.recipient_role !== 'me' && (
-                <div className="text-yellow-500 animate-pulse" title={entry.recipient_role === 'admin' ? 'Админ' : entry.recipient_name}>
-                  <TriangleAlert size={18} />
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground/70">{isCash ? 'Нал.' : 'Крт.'}</span>
-              {isCash ? (
-                <Banknote size={18} className="text-success" />
-              ) : (
-                <CreditCard size={18} className="text-primary" />
-              )}
-            </div>
-          </div>
-
-          {/* Middle Row: Client + Price */}
-          <div className="flex items-center justify-between mb-1">
-            <p className="font-medium text-foreground text-sm truncate mr-1 max-w-[80px]" title={entry.client_name}>
-              {entry.client_name || 'Без имени'}
-            </p>
-            <div className="flex flex-col items-end">
-              <span className="font-semibold text-sm">€{Number(entry.price).toFixed(0)}</span>
-              {(showTips || entry.tips_payment_method === 'card') && entry.tips > 0 && (
-                <div className="flex items-center gap-0.5 text-success text-xs font-medium">
-                  <span>+€{Number(entry.tips).toFixed(0)}</span>
-                  {entry.tips_payment_method === 'card' ? <CreditCard size={14} className="text-primary" /> : <Banknote size={14} className="text-success" />}
-                </div>
+                <TriangleAlert size={12} className="text-yellow-500 shrink-0" />
               )}
             </div>
           </div>
         </div>
 
-        {/* Bottom Row: Balance + Delete */}
-        <div className="flex items-center justify-between pt-1 border-t border-border/50">
-          {entry.recipient_role && entry.recipient_role !== 'me' ? (
-            entry.recipient_role === 'admin' && isCash ? (
-              <span className="text-xs font-bold text-success">
-                +€{isCash ? (entry.price * (rateCard / 100)).toFixed(2) : Math.abs(balanceAmount).toFixed(2)}
-              </span>
+        {/* Right: Financials & Actions */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-col items-end">
+            <span className="font-bold text-sm">€{Number(entry.price).toFixed(0)}</span>
+
+            {/* Small Balance Text */}
+            {entry.recipient_role && entry.recipient_role !== 'me' ? (
+              entry.recipient_role === 'admin' && isCash ? (
+                <span className="text-[10px] font-bold text-success">
+                  +€{isCash ? (entry.price * (rateCard / 100)).toFixed(2) : Math.abs(balanceAmount).toFixed(2)}
+                </span>
+              ) : (
+                <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {balanceAmount >= 0 ? 'Долг: ' : 'Мне: '}
+                  {balanceAmount >= 0 ? '+' : ''}€{Math.abs(balanceAmount).toFixed(2)}
+                </span>
+              )
             ) : (
-              <span className={`text-xs font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
+              <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {balanceAmount >= 0 ? 'Долг: ' : 'Мне: '}
+                {balanceAmount >= 0 ? '+' : ''}€{Math.abs(balanceAmount).toFixed(2)}
               </span>
-            )
-          ) : (
-            <span className={`text-xs font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
-            </span>
-          )}
+            )}
+          </div>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive -mr-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground/30 hover:text-destructive">
                 <Trash2 size={16} />
               </Button>
             </AlertDialogTrigger>
@@ -120,7 +114,7 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
               <AlertDialogHeader>
                 <AlertDialogTitle>Удалить запись?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Это действие нельзя отменить. Запись будет удалена навсегда.
+                  Запись будет удалена навсегда.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -132,6 +126,7 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
             </AlertDialogContent>
           </AlertDialog>
         </div>
+
       </div>
     </div>
   );

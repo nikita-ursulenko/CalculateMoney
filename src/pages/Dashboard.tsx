@@ -319,9 +319,9 @@ export default function Dashboard() {
               <>Доход: €{dailyStats.income.toFixed(2)}</>
             ) : (
               isPositiveBalance ? (
-                <>Долг салону: €{dailyStats.balance.toFixed(2)}</>
+                <>Долг мне: €{dailyStats.balance.toFixed(2)}</>
               ) : (
-                <>Долг мне: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+                <>Долг салону: €{Math.abs(dailyStats.balance).toFixed(2)}</>
               )
             )}
           </p>

@@ -102,6 +102,21 @@ export default function AdminAddEntry() {
 
       {/* Form */}
       <div className="px-5 py-6 space-y-6">
+        {/* Client Name */}
+        <div className="space-y-2">
+          <Label htmlFor="client" className="text-sm font-medium text-foreground">
+            Имя клиента
+          </Label>
+          <Input
+            id="client"
+            type="text"
+            placeholder="Опционально"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            className="h-12"
+          />
+        </div>
+
         {/* Service Selection */}
         <div className="space-y-2">
           <Label className="text-sm font-medium text-foreground">Услуга</Label>
@@ -148,21 +163,6 @@ export default function AdminAddEntry() {
         <div className="space-y-2">
           <Label className="text-sm font-medium text-foreground">Способ оплаты</Label>
           <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} />
-        </div>
-
-        {/* Client Name */}
-        <div className="space-y-2">
-          <Label htmlFor="client" className="text-sm font-medium text-foreground">
-            Имя клиента
-          </Label>
-          <Input
-            id="client"
-            type="text"
-            placeholder="Опционально"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            className="h-12"
-          />
         </div>
 
         {/* Submit Button */}

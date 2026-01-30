@@ -185,7 +185,7 @@
   }
 
   .entry-card {
-    @apply bg-card rounded-xl p-4 border border-border transition-all duration-200;
+    @apply bg-card rounded-xl p-3 border border-border transition-all duration-200;
     @apply hover:shadow-md;
     box-shadow: var(--shadow-card);
   }

@@ -16,6 +16,8 @@ export interface Entry {
   client_name: string;
   created_at: string;
   date_obj?: Date; // Optional helper
+  recipient_role?: 'me' | 'master' | 'admin';
+  recipient_name?: string;
 }
 
 export interface NewEntry {
@@ -26,6 +28,8 @@ export interface NewEntry {
   tips_payment_method?: 'cash' | 'card';
   client_name: string;
   date: string;
+  recipient_role?: 'me' | 'master' | 'admin';
+  recipient_name?: string;
 }
 
 export function useEntries(selectedDate?: Date | DateRange) {
@@ -45,8 +49,8 @@ export function useEntries(selectedDate?: Date | DateRange) {
         .from('entries')
         .select('*')
         .eq('user_id', user.id)
-        .order('date', { ascending: false }) // Order by date first
-        .order('created_at', { ascending: false });
+        .order('date', { ascending: true }) // Order by date first (Oldest first as requested)
+        .order('created_at', { ascending: true });
 
       if (selectedDate) {
         if (selectedDate instanceof Date) {

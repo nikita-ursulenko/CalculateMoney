@@ -32,6 +32,8 @@ export default function AddEntry() {
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card'>('cash');
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recipientRole, setRecipientRole] = useState<'me' | 'master' | 'admin'>('me');
+  const [recipientName, setRecipientName] = useState('');
 
   // Load existing data if editing
   useEffect(() => {
@@ -64,6 +66,8 @@ export default function AddEntry() {
         setTipsPaymentMethod((entry.tips_payment_method as 'cash' | 'card') || 'cash');
         setClientName(entry.client_name || '');
         setSelectedDate(new Date(entry.date));
+        setRecipientRole((entry.recipient_role as 'me' | 'master' | 'admin') || 'me');
+        setRecipientName(entry.recipient_name || '');
       }
       setLoading(false);
     };
@@ -83,6 +87,15 @@ export default function AddEntry() {
       return;
     }
 
+    if (recipientRole === 'master' && !recipientName.trim()) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите имя мастера',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     const entryData = {
@@ -93,6 +106,8 @@ export default function AddEntry() {
       tips_payment_method: tipsPaymentMethod,
       client_name: clientName,
       date: format(selectedDate, 'yyyy-MM-dd'),
+      recipient_role: recipientRole,
+      recipient_name: recipientRole === 'master' ? recipientName : null,
     };
 
     let result;
@@ -182,6 +197,55 @@ export default function AddEntry() {
             className="input-beauty h-12 text-base"
             required
           />
+        </div>
+
+        {/* Recipient Selection */}
+        <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+          <Label className="text-sm font-medium">Кто принял оплату?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setRecipientRole('me')}
+              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'me'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+            >
+              Я
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecipientRole('master')}
+              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'master'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+            >
+              Мастер
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecipientRole('admin')}
+              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'admin'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+            >
+              Админ
+            </button>
+          </div>
+
+          {recipientRole === 'master' && (
+            <div className="pt-1 animate-fade-in">
+              <Input
+                placeholder="Имя мастера"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                className="input-beauty h-10"
+                required
+              />
+            </div>
+          )}
         </div>
 
         {/* Tips */}

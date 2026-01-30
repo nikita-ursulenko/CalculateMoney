@@ -47,15 +47,34 @@ export default function Dashboard() {
       const price = Number(entry.price);
       const tips = Number(entry.tips);
       const isCash = entry.payment_method === 'cash';
-      const rate = isCash ? rateCash : rateCard;
+      const role = entry.recipient_role || 'me';
+
+      // Effective payment method implies where money is.
+      // If Admin took cash -> Money is in Salon -> Acts like Card.
+      const actsLikeCard = !isCash || role === 'admin';
+
+      // If Master took cash -> Money is with Master.
+      // I am responsible for commission to Salon (so Balance decreases like Cash),
+      // BUT Master forces me to have 0 cash initially? No, standard logic.
+      // If I did work, and Master took cash. 
+      // I owe commission to salon (-).
+      // Master owes me (Price).
+      // Net: Price - Commission.
+      // But standard 'Balance' shows "MY Cash vs My Debt".
+      // If Master has cash, I have 0.
+      // So effectively, it acts different.
+      // But user said: "If Master -> write name". "If Admin -> like card".
+      // So for Admin, we use rateCard.
+
+      const rate = actsLikeCard ? rateCard : rateCash;
 
       const tipsPaymentMethod = entry.tips_payment_method || 'cash';
 
       // Balance calculation
       // Service part
-      const serviceBalance = isCash
-        ? -(price * (1 - rate / 100))
-        : price * (rate / 100);
+      const serviceBalance = actsLikeCard
+        ? price * (rate / 100)
+        : -(price * (1 - rate / 100));
 
       // Tips part
       const tipsBalance = tipsPaymentMethod === 'cash'
@@ -72,13 +91,34 @@ export default function Dashboard() {
 
       const income = serviceIncome + tipsIncome;
 
+      // Track money taken by others
+      let othersTotal = acc.othersTotal;
+      if (role === 'master' && isCash) {
+        othersTotal += price; // Master took full cash
+      }
+      if (role === 'admin' && isCash) {
+        // Admin took cash. Calculated as actsLikeCard.
+        // Do we indicate this? User said "If Admin -> like Card".
+        // Maybe summary is needed? "Admin took: ...".
+        // User said: "Under total... Accepted by Name and price".
+        // This implies listing them.
+      }
+
+      const recipientKey = role === 'master' ? entry.recipient_name : null;
+      const newRecipients = { ...acc.recipients };
+      if (recipientKey && isCash) {
+        newRecipients[recipientKey] = (newRecipients[recipientKey] || 0) + price;
+      }
+
       return {
         balance: acc.balance + balanceChange,
         income: acc.income + income,
         tipsTotal: acc.tipsTotal + tipsIncome,
+        othersTotal,
+        recipients: newRecipients
       };
     },
-    { balance: 0, income: 0, tipsTotal: 0 }
+    { balance: 0, income: 0, tipsTotal: 0, othersTotal: 0, recipients: {} as Record<string, number> }
   );
 
   const isPositiveBalance = dailyStats.balance >= 0;
@@ -223,16 +263,25 @@ export default function Dashboard() {
           </p>
 
           {showIncome && (
-            <div className="flex items-center justify-center gap-2 text-sm animate-fade-in">
-              <TrendingUp size={16} className="text-success" />
-              <span className="text-success font-medium">
-                Твой доход: €{dailyStats.income.toFixed(2)}
-              </span>
-              {dailyStats.tipsTotal > 0 && (
-                <span className="text-muted-foreground">
-                  (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
+            <div className="flex flex-col items-center gap-1 animate-fade-in">
+              {/* Recipients Summary */}
+              {Object.entries(dailyStats.recipients).map(([name, amount]) => (
+                <div key={name} className="text-base text-yellow-500 font-bold mb-1 drop-shadow-md">
+                  Принялa {name}: €{amount.toFixed(2)}
+                </div>
+              ))}
+
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp size={16} className="text-success" />
+                <span className="text-success font-medium">
+                  Твой доход: €{dailyStats.income.toFixed(2)}
                 </span>
-              )}
+                {dailyStats.tipsTotal > 0 && (
+                  <span className="text-muted-foreground">
+                    (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -254,7 +303,7 @@ export default function Dashboard() {
             <p className="text-xs">Нажмите + чтобы добавить первую запись</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="pb-20 grid grid-cols-2 gap-3">
             {entries.map((entry, index) => (
               <div
                 key={entry.id}
@@ -276,6 +325,6 @@ export default function Dashboard() {
       </div>
 
       <BottomNav onAddClick={handleAddEntry} />
-    </div>
+    </div >
   );
 }

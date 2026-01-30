@@ -1,4 +1,4 @@
-import { Trash2, CreditCard, Banknote } from 'lucide-react';
+import { Trash2, CreditCard, Banknote, TriangleAlert } from 'lucide-react';
 import { Entry } from '@/hooks/useEntries';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,46 +49,70 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
 
   return (
     <div className="entry-card animate-fade-in">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-2 relative">
         <div className="flex-1 cursor-pointer" onClick={onClick}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="service-chip service-chip-active text-xs py-1 px-3">
-              {serviceLabels[entry.service] || entry.service}
-            </span>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              {isCash ? (
-                <Banknote size={16} className="text-success" />
-              ) : (
-                <CreditCard size={16} className="text-primary" />
+
+          {/* Top Row: Service + Icons */}
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1">
+              <span className="service-chip service-chip-active text-[10px] py-0.5 px-2">
+                {serviceLabels[entry.service] || entry.service}
+              </span>
+              {entry.recipient_role && entry.recipient_role !== 'me' && (
+                <div className="text-yellow-500 animate-pulse" title={entry.recipient_role === 'admin' ? 'Админ' : entry.recipient_name}>
+                  <TriangleAlert size={18} />
+                </div>
               )}
-              <span className="text-xs">{isCash ? 'Наличные' : 'Карта'}</span>
+            </div>
+
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground/70">{isCash ? 'Нал.' : 'Крт.'}</span>
+              {isCash ? (
+                <Banknote size={18} className="text-success" />
+              ) : (
+                <CreditCard size={18} className="text-primary" />
+              )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between mr-2 mt-1">
-            <p className="font-medium text-foreground text-sm">
+          {/* Middle Row: Client + Price */}
+          <div className="flex items-center justify-between mb-1">
+            <p className="font-medium text-foreground text-sm truncate mr-1 max-w-[80px]" title={entry.client_name}>
               {entry.client_name || 'Без имени'}
             </p>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold">€{Number(entry.price).toFixed(2)}</span>
+            <div className="flex flex-col items-end">
+              <span className="font-semibold text-sm">€{Number(entry.price).toFixed(0)}</span>
               {(showTips || entry.tips_payment_method === 'card') && entry.tips > 0 && (
-                <div className="flex items-center gap-1 text-success text-xs">
-                  <span>+€{Number(entry.tips).toFixed(2)}</span>
-                  {entry.tips_payment_method === 'card' ? <CreditCard size={12} className="text-primary" /> : <Banknote size={12} className="text-success" />}
+                <div className="flex items-center gap-0.5 text-success text-xs font-medium">
+                  <span>+€{Number(entry.tips).toFixed(0)}</span>
+                  {entry.tips_payment_method === 'card' ? <CreditCard size={14} className="text-primary" /> : <Banknote size={14} className="text-success" />}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <span className={`text-sm font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-            {balanceAmount >= 0 ? '+' : ''}€{balanceAmount.toFixed(2)}
-          </span>
+        {/* Bottom Row: Balance + Delete */}
+        <div className="flex items-center justify-between pt-1 border-t border-border/50">
+          {entry.recipient_role && entry.recipient_role !== 'me' ? (
+            entry.recipient_role === 'admin' && isCash ? (
+              <span className="text-xs font-bold text-success">
+                +€{isCash ? (entry.price * (rateCard / 100)).toFixed(2) : Math.abs(balanceAmount).toFixed(2)}
+              </span>
+            ) : (
+              <span className={`text-xs font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
+              </span>
+            )
+          ) : (
+            <span className={`text-xs font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
+              {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
+            </span>
+          )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive -mr-1">
                 <Trash2 size={16} />
               </Button>
             </AlertDialogTrigger>

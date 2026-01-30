@@ -22,8 +22,11 @@ export type Database = {
           id: string
           payment_method: string
           price: number
+          recipient_name: string | null
+          recipient_role: string | null
           service: string
           tips: number
+          tips_payment_method: string | null
           user_id: string
         }
         Insert: {
@@ -33,8 +36,11 @@ export type Database = {
           id?: string
           payment_method: string
           price?: number
+          recipient_name?: string | null
+          recipient_role?: string | null
           service: string
           tips?: number
+          tips_payment_method?: string | null
           user_id: string
         }
         Update: {
@@ -44,8 +50,11 @@ export type Database = {
           id?: string
           payment_method?: string
           price?: number
+          recipient_name?: string | null
+          recipient_role?: string | null
           service?: string
           tips?: number
+          tips_payment_method?: string | null
           user_id?: string
         }
         Relationships: []

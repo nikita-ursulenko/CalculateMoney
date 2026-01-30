@@ -31,16 +31,16 @@ export default function AdminAddEntry() {
   const [service, setService] = useState('');
   const [price, setPrice] = useState('');
   const [tips, setTips] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!service || !price || !masterId) {
+    if (!service || !price || !masterId || !paymentMethod) {
       toast({
         title: 'Заполните поля',
-        description: 'Услуга и стоимость обязательны',
+        description: 'Услуга, стоимость и способ оплаты обязательны',
         variant: 'destructive',
       });
       return;
@@ -63,7 +63,7 @@ export default function AdminAddEntry() {
         service,
         price: Number(price),
         tips: Number(tips) || 0,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod as 'cash' | 'card',
         tips_payment_method: tipsPaymentMethod,
         client_name: clientName,
         date: format(selectedDate, 'yyyy-MM-dd'),

@@ -2,7 +2,7 @@ import { Euro, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PaymentTabsProps {
-  selected: 'cash' | 'card';
+  selected: 'cash' | 'card' | null;
   onChange: (method: 'cash' | 'card') => void;
   className?: string; // Add this
 }

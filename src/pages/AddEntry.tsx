@@ -31,7 +31,7 @@ export default function AddEntry() {
   const [service, setService] = useState('');
   const [price, setPrice] = useState('');
   const [tips, setTips] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -99,6 +99,15 @@ export default function AddEntry() {
       return;
     }
 
+    if (!paymentMethod) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите способ оплаты',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (parseFloat(tips) > 0 && !tipsPaymentMethod) {
       toast({
         title: 'Ошибка',
@@ -123,7 +132,7 @@ export default function AddEntry() {
       service,
       price: parseFloat(price),
       tips: parseFloat(tips) || 0,
-      payment_method: paymentMethod,
+      payment_method: paymentMethod as 'cash' | 'card',
       tips_payment_method: tipsPaymentMethod,
       client_name: clientName,
       date: format(selectedDate, 'yyyy-MM-dd'),

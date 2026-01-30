@@ -66,7 +66,7 @@ export default function AddEntry() {
         setPrice(entry.price.toString());
         setTips(entry.tips > 0 ? entry.tips.toString() : '');
         setPaymentMethod(entry.payment_method as 'cash' | 'card');
-        setTipsPaymentMethod((entry.tips_payment_method as 'cash' | 'card') || 'cash');
+        setTipsPaymentMethod((entry.tips_payment_method as 'cash' | 'card') || null);
         setClientName(entry.client_name || '');
         setSelectedDate(new Date(entry.date));
         setRecipientRole((entry.recipient_role as 'me' | 'master' | 'admin') || 'me');

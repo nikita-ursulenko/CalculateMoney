@@ -205,7 +205,7 @@ export default function AdminAddEntry() {
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={submitting || !service || !price}
+          disabled={submitting}
           className={cn(
             'w-full h-14 text-lg font-semibold rounded-2xl',
             'bg-primary hover:bg-primary/90 text-primary-foreground'

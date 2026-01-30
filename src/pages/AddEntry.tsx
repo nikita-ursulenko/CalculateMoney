@@ -29,6 +29,7 @@ export default function AddEntry() {
   const { isAdmin } = useUserRole();
 
   const [service, setService] = useState('manicure');
+  const [serviceMode, setServiceMode] = useState<'single' | 'multiple'>('single');
   const [price, setPrice] = useState('');
   const [tips, setTips] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
@@ -63,6 +64,11 @@ export default function AddEntry() {
       if (data) {
         const entry = data as any; // Cast to any to bypass outdated Supabase types
         setService(entry.service);
+        if (entry.service.includes(',')) {
+          setServiceMode('multiple');
+        } else {
+          setServiceMode('single');
+        }
         setPrice(entry.price.toString());
         setTips(entry.tips > 0 ? entry.tips.toString() : '');
         setPaymentMethod(entry.payment_method as 'cash' | 'card');
@@ -173,8 +179,42 @@ export default function AddEntry() {
         </div>
         {/* Service Selection */}
         <div className="space-y-2 animate-fade-in">
-          <Label className="text-sm font-medium">Услуга</Label>
-          <ServiceChips selected={service} onChange={setService} />
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Услуга</Label>
+            <div className="flex bg-muted p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  // If switching to single, keep only the first selected service
+                  if (service.includes(',')) {
+                    setService(service.split(',')[0]);
+                  }
+                  setServiceMode('single');
+                }}
+                className={`px-3 py-1 text-xs rounded-md transition-all ${serviceMode === 'single'
+                  ? 'bg-background shadow text-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Одна услуга
+              </button>
+              <button
+                type="button"
+                onClick={() => setServiceMode('multiple')}
+                className={`px-3 py-1 text-xs rounded-md transition-all ${serviceMode === 'multiple'
+                  ? 'bg-background shadow text-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Несколько
+              </button>
+            </div>
+          </div>
+          <ServiceChips
+            selected={service}
+            onChange={setService}
+            allowMultiple={serviceMode === 'multiple'}
+          />
         </div>
 
         {/* Price */}

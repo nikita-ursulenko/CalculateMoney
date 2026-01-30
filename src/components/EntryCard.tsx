@@ -53,6 +53,10 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
     other: 'Другое',
   };
 
+  const displayServices = entry.service
+    .split(',')
+    .map(s => serviceLabels[s.trim()] || s);
+
   return (
     <div className="entry-card animate-fade-in py-2 px-3">
       <div className="flex items-center gap-3">
@@ -70,28 +74,35 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
               <span className="font-semibold text-sm text-foreground truncate">
                 {entry.client_name || 'Без имени'}
               </span>
-              {/* Show tips if: 
-                  1. Tips > 0
-                  2. AND (
-                       It's NOT Admin View (use standard showTips logic)
-                       OR 
-                       It IS Admin View BUT tips are Card (hide Cash tips for Admin)
-                     )
-              */}
-              {entry.tips > 0 && (!isAdminView || entry.tips_payment_method === 'card') && (
-                <div className="flex items-center text-success text-[10px] font-bold bg-success/10 px-1 rounded">
-                  +€{Number(entry.tips).toFixed(0)}
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center gap-1.5 pt-0.5">
-              <span className="text-[11px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                {serviceLabels[entry.service] || entry.service}
-              </span>
-              {entry.recipient_role && entry.recipient_role !== 'me' && (
-                <TriangleAlert size={12} className="text-yellow-500 shrink-0" />
-              )}
+            <div className="flex items-center gap-2 pt-0.5">
+              <div className="flex flex-col gap-1 items-start">
+                {displayServices.map((service, idx) => (
+                  <span key={idx} className="text-[11px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                    {service}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Show tips if: 
+                    1. Tips > 0
+                    2. AND (
+                        It's NOT Admin View (use standard showTips logic)
+                        OR 
+                        It IS Admin View BUT tips are Card (hide Cash tips for Admin)
+                      )
+                */}
+                {entry.tips > 0 && (!isAdminView || entry.tips_payment_method === 'card') && (
+                  <div className="flex items-center text-success text-[10px] font-bold bg-success/10 px-1 rounded">
+                    +€{Number(entry.tips).toFixed(0)}
+                  </div>
+                )}
+                {entry.recipient_role && entry.recipient_role !== 'me' && (
+                  <TriangleAlert size={12} className="text-yellow-500 shrink-0" />
+                )}
+              </div>
             </div>
           </div>
         </div>

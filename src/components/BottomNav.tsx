@@ -16,20 +16,20 @@ export function BottomNav({ onAddClick, isAdmin = false }: BottomNavProps) {
 
   const navItems = isAdmin
     ? [
-        { path: '/admin', icon: Shield, label: 'Админка' },
-        { path: '/admin/add', icon: Plus, label: 'Добавить', isFab: true },
-        { path: '/dashboard', icon: Home, label: 'Мастер' },
-      ]
+      { path: '/admin', icon: Shield, label: 'Админка' },
+      { path: '/admin/add', icon: Plus, label: 'Добавить', isFab: true },
+      { path: '/dashboard', icon: Home, label: 'Мастер' },
+    ]
     : [
-        { path: '/dashboard', icon: Home, label: 'Главная' },
-        { path: '/add', icon: Plus, label: 'Добавить', isFab: true },
-        { path: '/settings', icon: Settings, label: 'Настройки' },
-      ];
+      { path: '/dashboard', icon: Home, label: 'Главная' },
+      { path: '/add', icon: Plus, label: 'Добавить', isFab: true },
+      { path: '/settings', icon: Settings, label: 'Настройки' },
+    ];
 
   return (
     <nav className="bottom-nav safe-area-bottom">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.path || 
+        const isActive = location.pathname === item.path ||
           (item.path === '/admin' && location.pathname.startsWith('/admin'));
         const Icon = item.icon;
 

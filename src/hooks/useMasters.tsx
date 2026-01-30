@@ -35,7 +35,10 @@ export function useMasters() {
 
         if (error) throw error;
 
-        setMasters(data?.map(s => ({
+        // Filter out the admin themselves
+        const filteredData = data?.filter(s => s.user_id !== user.id) || [];
+
+        setMasters(filteredData.map(s => ({
           user_id: s.user_id,
           master_name: s.master_name || 'Без имени',
           rate_general: Number(s.rate_general),

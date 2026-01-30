@@ -136,6 +136,15 @@ export default function AdminDashboard() {
 
       const income = serviceIncome + tipsIncome;
 
+      // Calculate Salon's Income (User wants "Ваш доход")
+      // Salon gets whatever Master doesn't get from the service price.
+      // Master Rate is `rate`. Salon Rate is `100 - rate`.
+      const salonShare = price * (1 - rate / 100);
+
+      // Calculate Card Tips (User: "не показывай чай если чай были наличными")
+      // If payment is card, tips are card tips.
+      const cardTips = tipsPaymentMethod === 'card' ? tips : 0;
+
       const recipientKey = role === 'master' ? entry.recipient_name : null;
       const newRecipients = { ...acc.recipients };
       if (recipientKey && isCash) {
@@ -146,10 +155,12 @@ export default function AdminDashboard() {
         balance: acc.balance + balanceChange,
         income: acc.income + income,
         tipsTotal: acc.tipsTotal + tipsIncome,
-        recipients: newRecipients
+        recipients: newRecipients,
+        salonIncome: (acc.salonIncome || 0) + salonShare,
+        cardTips: (acc.cardTips || 0) + cardTips,
       };
     },
-    { balance: 0, income: 0, tipsTotal: 0, recipients: {} as Record<string, number> }
+    { balance: 0, income: 0, tipsTotal: 0, recipients: {} as Record<string, number>, salonIncome: 0, cardTips: 0 }
   );
 
   const isPositiveBalance = dailyStats.balance >= 0;
@@ -311,15 +322,19 @@ export default function AdminDashboard() {
             </div>
 
             <p className="text-xs text-muted-foreground mb-1">{selectedMaster.master_name}</p>
-            <p className="text-sm text-muted-foreground mb-2">Баланс за период</p>
             <p className={cn(
               'text-3xl font-bold mb-3 transition-colors duration-500',
-              isPositiveBalance ? 'text-success' : 'text-destructive'
+              // Invert Logic for Admin: 
+              // If dailyStats.balance < 0 (Master owes Salon) -> Admin sees Positive (Green)
+              // If dailyStats.balance > 0 (Salon owes Master) -> Admin sees Negative (Red)
+              dailyStats.balance <= 0 ? 'text-success' : 'text-destructive'
             )}>
-              {isPositiveBalance ? (
-                <>Долг салону: €{dailyStats.balance.toFixed(2)}</>
+              {dailyStats.balance <= 0 ? (
+                // Master owes Salon (e.g. -100 for Master -> +100 for Salon)
+                <>Мастер должен: €{Math.abs(dailyStats.balance).toFixed(2)}</>
               ) : (
-                <>Долг мастеру: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+                // Salon owes Master (e.g. +100 for Master -> -100 for Salon)
+                <>Я должен: €{dailyStats.balance.toFixed(2)}</>
               )}
             </p>
 
@@ -331,14 +346,16 @@ export default function AdminDashboard() {
                   </div>
                 ))}
 
-                <div className="flex items-center gap-2 text-sm">
-                  <TrendingUp size={16} className="text-success" />
-                  <span className="text-success font-medium">
-                    Доход мастера: €{dailyStats.income.toFixed(2)}
-                  </span>
-                  {dailyStats.tipsTotal > 0 && (
-                    <span className="text-muted-foreground">
-                      (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
+                <div className="flex flex-col items-center gap-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp size={16} className="text-success" />
+                    <span className="text-success font-medium">
+                      Ваш доход: €{(dailyStats.salonIncome || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  {(dailyStats.cardTips || 0) > 0 && (
+                    <span className="text-muted-foreground text-xs">
+                      (чаевые карта: €{(dailyStats.cardTips || 0).toFixed(2)})
                     </span>
                   )}
                 </div>
@@ -386,6 +403,7 @@ export default function AdminDashboard() {
                   onDelete={handleDeleteEntry}
                   showTips={showIncome}
                   onClick={() => navigate(`/admin/edit/${entry.id}?master=${selectedMasterId}`)}
+                  isAdminView={true}
                 />
               </div>
             ))}

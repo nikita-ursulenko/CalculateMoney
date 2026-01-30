@@ -13,6 +13,8 @@ import { PaymentTabs } from '@/components/PaymentTabs';
 import { useEntries } from '@/hooks/useEntries';
 import { useToast } from '@/hooks/use-toast';
 
+import { useUserRole } from '@/hooks/useUserRole';
+
 export default function AddEntry() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -24,6 +26,7 @@ export default function AddEntry() {
   const navigate = useNavigate();
   const { addEntry, updateEntry } = useEntries();
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
 
   const [service, setService] = useState('manicure');
   const [price, setPrice] = useState('');
@@ -193,54 +196,56 @@ export default function AddEntry() {
           />
         </div>
 
-        {/* Recipient Selection */}
-        <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <Label className="text-sm font-medium">Кто принял оплату?</Label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setRecipientRole('me')}
-              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'me'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-            >
-              Я
-            </button>
-            <button
-              type="button"
-              onClick={() => setRecipientRole('master')}
-              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'master'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-            >
-              Мастер
-            </button>
-            <button
-              type="button"
-              onClick={() => setRecipientRole('admin')}
-              className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'admin'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-            >
-              Админ
-            </button>
-          </div>
-
-          {recipientRole === 'master' && (
-            <div className="pt-1 animate-fade-in">
-              <Input
-                placeholder="Имя мастера"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                className="input-beauty h-10"
-                required
-              />
+        {/* Recipient Selection - Hide for Admin */}
+        {!isAdmin && (
+          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <Label className="text-sm font-medium">Кто принял оплату?</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setRecipientRole('me')}
+                className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'me'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+              >
+                Я
+              </button>
+              <button
+                type="button"
+                onClick={() => setRecipientRole('master')}
+                className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'master'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+              >
+                Мастер
+              </button>
+              <button
+                type="button"
+                onClick={() => setRecipientRole('admin')}
+                className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'admin'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+              >
+                Админ
+              </button>
             </div>
-          )}
-        </div>
+
+            {recipientRole === 'master' && (
+              <div className="pt-1 animate-fade-in">
+                <Input
+                  placeholder="Имя мастера"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="input-beauty h-10"
+                  required
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tips */}
         <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.15s' }}>
@@ -313,7 +318,7 @@ export default function AddEntry() {
         </div>
       </form>
 
-      <BottomNav />
+      <BottomNav isAdmin={isAdmin} />
     </div>
   );
 }

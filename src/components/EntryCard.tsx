@@ -20,20 +20,29 @@ interface EntryCardProps {
   onDelete: (id: string) => void;
   showTips?: boolean;
   onClick?: () => void;
+  isAdminView?: boolean;
+  isOwnerView?: boolean;
 }
 
-export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true, onClick }: EntryCardProps) {
+export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true, onClick, isAdminView = false, isOwnerView = false }: EntryCardProps) {
   const isCash = entry.payment_method === 'cash';
   const rate = isCash ? rateCash : rateCard;
 
   // Calculate Service Balance
   let balance = isCash
-    ? -(entry.price * (1 - rate / 100)) // Master owes Salon
-    : entry.price * (rate / 100); // Salon owes Master
+    ? -(entry.price * (1 - rate / 100)) // Master owes Salon (negative for master)
+    : entry.price * (rate / 100); // Salon owes Master (positive for master)
 
   // Calculate Tips Balance
   if (entry.tips > 0 && entry.tips_payment_method === 'card') {
     balance += entry.tips * (rateCard / 100);
+  }
+
+  // If Admin View, invert the balance perspective
+  // If Master owes Salon (-), Admin sees (+)
+  // If Salon owes Master (+), Admin sees (-)
+  if (isAdminView) {
+    balance = -balance;
   }
 
   const balanceAmount = balance;
@@ -61,7 +70,15 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
               <span className="font-semibold text-sm text-foreground truncate">
                 {entry.client_name || 'Без имени'}
               </span>
-              {(showTips || entry.tips_payment_method === 'card') && entry.tips > 0 && (
+              {/* Show tips if: 
+                  1. Tips > 0
+                  2. AND (
+                       It's NOT Admin View (use standard showTips logic)
+                       OR 
+                       It IS Admin View BUT tips are Card (hide Cash tips for Admin)
+                     )
+              */}
+              {entry.tips > 0 && (!isAdminView || entry.tips_payment_method === 'card') && (
                 <div className="flex items-center text-success text-[10px] font-bold bg-success/10 px-1 rounded">
                   +€{Number(entry.tips).toFixed(0)}
                 </div>
@@ -85,20 +102,30 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
             <span className="font-bold text-sm">€{Number(entry.price).toFixed(0)}</span>
 
             {/* Small Balance Text */}
-            {entry.recipient_role && entry.recipient_role !== 'me' ? (
-              entry.recipient_role === 'admin' && isCash ? (
-                <span className="text-[10px] font-bold text-success">
-                  +€{isCash ? (entry.price * (rateCard / 100)).toFixed(2) : Math.abs(balanceAmount).toFixed(2)}
-                </span>
+            {!isOwnerView && (
+              entry.recipient_role && entry.recipient_role !== 'me' ? (
+                entry.recipient_role === 'admin' && isCash ? (
+                  // Admin took cash -> Effectively card for master. Admin owes master commission.
+                  // For Admin View? Admin has cash. Admin owes master (price * rate).
+                  // But let's keep simplistic logic first.
+                  <span className="text-[10px] font-bold text-success">
+                    +€{isCash ? (entry.price * (rateCard / 100)).toFixed(2) : Math.abs(balanceAmount).toFixed(2)}
+                  </span>
+                ) : (
+                  <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
+                  </span>
+                )
               ) : (
                 <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
                   {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
                 </span>
               )
-            ) : (
-              <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
-              </span>
+            )}
+            {isOwnerView && (
+              <span className="text-[10px] font-bold text-muted-foreground/0 select-none">&nbsp;</span>
+              // Or simply nothing. If nothing, layout might shift. But flex-col items-end handles it.
+              // Let's render nothing.
             )}
           </div>
 

@@ -14,6 +14,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useEntries } from '@/hooks/useEntries';
 import { useExportData } from '@/hooks/useExportData';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);
   const { exportToPDF } = useExportData();
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
 
   const handleAddEntry = () => {
     const targetDate = selectedDate?.from || new Date();
@@ -309,15 +311,18 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-2">Баланс за период</p>
           <p className={cn(
             'text-3xl font-bold mb-3 transition-colors duration-500',
-            isPositiveBalance ? 'text-success' : 'text-destructive'
+            isAdmin ? 'text-success' : (isPositiveBalance ? 'text-success' : 'text-destructive')
           )}>
-            {isPositiveBalance ? (
-              <>Долг салону: €{dailyStats.balance.toFixed(2)}</>
+            {isAdmin ? (
+              <>Доход: €{dailyStats.income.toFixed(2)}</>
             ) : (
-              <>Долг мне: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+              isPositiveBalance ? (
+                <>Долг салону: €{dailyStats.balance.toFixed(2)}</>
+              ) : (
+                <>Долг мне: €{Math.abs(dailyStats.balance).toFixed(2)}</>
+              )
             )}
           </p>
 
@@ -331,10 +336,14 @@ export default function Dashboard() {
               ))}
 
               <div className="flex items-center gap-2 text-sm">
-                <TrendingUp size={16} className="text-success" />
-                <span className="text-success font-medium">
-                  Твой доход: €{dailyStats.income.toFixed(2)}
-                </span>
+                {!isAdmin && (
+                  <TrendingUp size={16} className="text-success" />
+                )}
+                {!isAdmin && (
+                  <span className="text-success font-medium">
+                    Твой доход: €{dailyStats.income.toFixed(2)}
+                  </span>
+                )}
                 {dailyStats.tipsTotal > 0 && (
                   <span className="text-muted-foreground">
                     (чаевые: €{dailyStats.tipsTotal.toFixed(2)})
@@ -379,6 +388,7 @@ export default function Dashboard() {
                   onDelete={handleDeleteEntry}
                   showTips={showIncome}
                   onClick={() => navigate(`/edit/${entry.id}`)}
+                  isOwnerView={isAdmin}
                 />
               </div>
             ))}
@@ -386,7 +396,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <BottomNav onAddClick={handleAddEntry} />
+      <BottomNav onAddClick={handleAddEntry} isAdmin={isAdmin} />
     </div >
   );
 }

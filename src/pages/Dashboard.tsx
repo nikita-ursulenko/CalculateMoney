@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { format, addDays, isSameDay } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { format, addDays, isSameDay, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2, Plus, Eye, EyeOff } from 'lucide-react';
@@ -9,20 +9,73 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BottomNav } from '@/components/BottomNav';
 import { EntryCard } from '@/components/EntryCard';
+import { ExportMenu } from '@/components/ExportMenu';
 import { useSettings } from '@/hooks/useSettings';
 import { useEntries } from '@/hooks/useEntries';
+import { useExportData } from '@/hooks/useExportData';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: undefined,
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [selectedDate, setSelectedDate] = useState<DateRange | undefined>(() => {
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
+
+    // 1. Priority: URL Params
+    if (fromParam) {
+      return {
+        from: parseISO(fromParam),
+        to: toParam ? parseISO(toParam) : undefined,
+      };
+    }
+
+    // 2. Secondary: LocalStorage
+    const savedDate = localStorage.getItem('dashboard_date');
+    if (savedDate) {
+      try {
+        const parsed = JSON.parse(savedDate);
+        return {
+          from: parseISO(parsed.from),
+          to: parsed.to ? parseISO(parsed.to) : undefined,
+        };
+      } catch (e) {
+        console.error('Failed to parse saved date', e);
+      }
+    }
+
+    // 3. Fallback: Today
+    return {
+      from: new Date(),
+      to: undefined,
+    };
   });
+
+  // Sync state to URL and LocalStorage
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedDate?.from) {
+      params.set('from', format(selectedDate.from, 'yyyy-MM-dd'));
+    }
+    if (selectedDate?.to) {
+      params.set('to', format(selectedDate.to, 'yyyy-MM-dd'));
+    }
+    setSearchParams(params, { replace: true });
+
+    // Save to LocalStorage
+    if (selectedDate?.from) {
+      localStorage.setItem('dashboard_date', JSON.stringify({
+        from: format(selectedDate.from, 'yyyy-MM-dd'),
+        to: selectedDate.to ? format(selectedDate.to, 'yyyy-MM-dd') : undefined
+      }));
+    }
+  }, [selectedDate, setSearchParams]);
   const [showIncome, setShowIncome] = useState(true);
   const { settings, loading: settingsLoading } = useSettings();
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);
+  const { exportToPDF } = useExportData();
   const { toast } = useToast();
 
   const handleAddEntry = () => {
@@ -241,14 +294,20 @@ export default function Dashboard() {
           'balance-card animate-slide-up relative bg-card', // Added animate-slide-up
           isPositiveBalance ? 'balance-positive' : 'balance-negative'
         )}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 h-8 w-8 text-muted-foreground/50 hover:text-foreground transition-transform hover:scale-105"
-            onClick={() => setShowIncome(!showIncome)}
-          >
-            {showIncome ? <Eye size={18} /> : <EyeOff size={18} />}
-          </Button>
+          <div className="absolute top-2 right-2 flex gap-2">
+            <ExportMenu
+              onExportPDF={() => exportToPDF(entries, selectedDate || { from: new Date() }, dailyStats, rateCash, rateCard)}
+              disabled={entries.length === 0}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground/50 hover:text-foreground transition-transform hover:scale-105"
+              onClick={() => setShowIncome(!showIncome)}
+            >
+              {showIncome ? <Eye size={18} /> : <EyeOff size={18} />}
+            </Button>
+          </div>
 
           <p className="text-sm text-muted-foreground mb-2">Баланс за период</p>
           <p className={cn(

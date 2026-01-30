@@ -131,7 +131,8 @@ export default function AddEntry() {
         title: 'Успешно!',
         description: id ? 'Запись обновлена' : 'Запись добавлена',
       });
-      navigate('/dashboard');
+      // Navigate to the date of the entry
+      navigate(`/dashboard?from=${format(selectedDate, 'yyyy-MM-dd')}`);
     }
 
     setLoading(false);
@@ -141,14 +142,7 @@ export default function AddEntry() {
     <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
       <header className="px-5 pt-6 pb-4 flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/dashboard')}
-          className="rounded-xl h-10 w-10"
-        >
-          <ArrowLeft size={20} />
-        </Button>
+
         <div>
           <h1 className="text-xl font-display font-bold text-foreground">
             {id ? 'Редактировать' : 'Новая запись'}
@@ -207,8 +201,8 @@ export default function AddEntry() {
               type="button"
               onClick={() => setRecipientRole('me')}
               className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'me'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
             >
               Я
@@ -217,8 +211,8 @@ export default function AddEntry() {
               type="button"
               onClick={() => setRecipientRole('master')}
               className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'master'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
             >
               Мастер
@@ -227,8 +221,8 @@ export default function AddEntry() {
               type="button"
               onClick={() => setRecipientRole('admin')}
               className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${recipientRole === 'admin'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
             >
               Админ

@@ -296,7 +296,7 @@ export default function Dashboard() {
         )}>
           <div className="absolute top-2 right-2 flex gap-2">
             <ExportMenu
-              onExportPDF={() => exportToPDF(entries, selectedDate || { from: new Date() }, dailyStats, rateCash, rateCard)}
+              onExportPDF={() => exportToPDF(entries, selectedDate || { from: new Date() }, dailyStats, rateCash, rateCard, settings?.master_name || 'Мастер')}
               disabled={entries.length === 0}
             />
             <Button
@@ -349,7 +349,10 @@ export default function Dashboard() {
       {/* Entries List */}
       <div className="px-5">
         <h2 className="text-base font-semibold mb-3 text-foreground animate-fade-in">
-          Записи на {format(selectedDate?.from || new Date(), 'EEEE, d MMMM', { locale: ru })}
+          Записи на {selectedDate?.to && !isSameDay(selectedDate.from!, selectedDate.to)
+            ? `${format(selectedDate.from!, 'd MMM', { locale: ru })} - ${format(selectedDate.to, 'd MMM', { locale: ru })}`
+            : format(selectedDate?.from || new Date(), 'EEEE, d MMMM', { locale: ru })
+          }
         </h2>
 
         {loading ? (

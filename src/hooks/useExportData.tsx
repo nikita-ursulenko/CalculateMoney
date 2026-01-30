@@ -24,7 +24,7 @@ const serviceLabels: Record<string, string> = {
 export function useExportData() {
 
 
-  const exportToPDF = (entries: Entry[], dateRange: DateRange, dailyStats: DailyStats, rateCash: number, rateCard: number) => {
+  const exportToPDF = (entries: Entry[], dateRange: DateRange, dailyStats: DailyStats, rateCash: number, rateCard: number, masterName: string = 'Мастер') => {
     // Format date range
     const periodText = dateRange.to && dateRange.from.getTime() !== dateRange.to.getTime()
       ? `${format(dateRange.from, 'd MMMM yyyy', { locale: ru })} - ${format(dateRange.to, 'd MMMM yyyy', { locale: ru })}`
@@ -64,6 +64,13 @@ export function useExportData() {
       margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 2px;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      color: #34495e;
+      margin-bottom: 5px;
+      font-weight: 500;
     }
     
     .header .period {
@@ -356,6 +363,7 @@ export function useExportData() {
 <body>
   <div class="header">
     <h1>Финансовый отчет</h1>
+    <div class="subtitle">Мастер: ${masterName}</div>
     <div class="period">${periodText}</div>
   </div>
 

@@ -92,14 +92,12 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
                 </span>
               ) : (
                 <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {balanceAmount >= 0 ? 'Долг: ' : 'Мне: '}
-                  {balanceAmount >= 0 ? '+' : ''}€{Math.abs(balanceAmount).toFixed(2)}
+                  {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
                 </span>
               )
             ) : (
               <span className={`text-[10px] font-bold ${balanceAmount >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {balanceAmount >= 0 ? 'Долг: ' : 'Мне: '}
-                {balanceAmount >= 0 ? '+' : ''}€{Math.abs(balanceAmount).toFixed(2)}
+                {balanceAmount >= 0 ? '+' : '-'}€{Math.abs(balanceAmount).toFixed(2)}
               </span>
             )}
           </div>

@@ -25,20 +25,31 @@ export function useUserRole(): UserRoleState {
       }
 
       try {
+        // логируем текущего пользователя перед запросом
+        console.log('useUserRole: fetching role for user id =', user.id);
+
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching user role:', error);
-          setRole(null);
-        } else {
-          setRole(data?.role as AppRole || null);
+        // логируем то, что пришло от Supabase
+        console.log('useUserRole: fetch result', { data, error });
+
+        // fallback на случай, если API вернул массив вместо объекта
+        let resolvedRole: AppRole | null = null;
+        if (data) {
+          if (Array.isArray(data)) {
+            resolvedRole = (data[0]?.role as AppRole) || null;
+          } else {
+            resolvedRole = (data.role as AppRole) || null;
+          }
         }
-      } catch (error) {
-        console.error('Error fetching user role:', error);
+
+        setRole(resolvedRole);
+      } catch (err) {
+        console.error('Error fetching user role:', err);
         setRole(null);
       } finally {
         setLoading(false);

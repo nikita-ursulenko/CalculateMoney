@@ -1,25 +1,36 @@
-import { Home, Plus, Settings, X } from 'lucide-react';
+import { Home, Plus, Settings, X, Shield } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface BottomNavProps {
   onAddClick?: () => void;
+  isAdmin?: boolean;
 }
 
-export function BottomNav({ onAddClick }: BottomNavProps) {
+export function BottomNav({ onAddClick, isAdmin = false }: BottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = [
-    { path: '/dashboard', icon: Home, label: 'Главная' },
-    { path: '/add', icon: Plus, label: 'Добавить', isFab: true },
-    { path: '/settings', icon: Settings, label: 'Настройки' },
-  ];
+  const basePath = isAdmin ? '/admin' : '/dashboard';
+  const settingsPath = isAdmin ? '/admin' : '/settings';
+
+  const navItems = isAdmin
+    ? [
+        { path: '/admin', icon: Shield, label: 'Админка' },
+        { path: '/admin/add', icon: Plus, label: 'Добавить', isFab: true },
+        { path: '/dashboard', icon: Home, label: 'Мастер' },
+      ]
+    : [
+        { path: '/dashboard', icon: Home, label: 'Главная' },
+        { path: '/add', icon: Plus, label: 'Добавить', isFab: true },
+        { path: '/settings', icon: Settings, label: 'Настройки' },
+      ];
 
   return (
     <nav className="bottom-nav safe-area-bottom">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.path;
+        const isActive = location.pathname === item.path || 
+          (item.path === '/admin' && location.pathname.startsWith('/admin'));
         const Icon = item.icon;
 
         if (item.isFab) {
@@ -31,7 +42,7 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
               key={item.path}
               onClick={() => {
                 if (isAddOrEdit) {
-                  navigate('/dashboard');
+                  navigate(basePath);
                 } else if (onAddClick) {
                   onAddClick();
                 } else {
@@ -52,7 +63,7 @@ export function BottomNav({ onAddClick }: BottomNavProps) {
           <button
             key={item.path}
             onClick={() => {
-              const direction = item.path === '/settings' ? 'forward' : 'back';
+              const direction = item.path === '/settings' || item.path === '/dashboard' ? 'forward' : 'back';
               navigate(item.path, { state: { direction } });
             }}
             className={cn('nav-item', isActive && 'nav-item-active')}

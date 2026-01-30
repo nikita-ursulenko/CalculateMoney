@@ -4,10 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import AddEntry from "./pages/AddEntry";
 import SettingsPage from "./pages/SettingsPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminAddEntry from "./pages/AdminAddEntry";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -33,8 +36,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -43,6 +47,30 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
+    // Redirect admin to admin dashboard, regular users to dashboard
+    return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+
+  if (loading || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -108,6 +136,37 @@ function AppRoutes() {
                 <SettingsPage />
               </PageWrapper>
             </ProtectedRoute>
+          }
+        />
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <PageWrapper>
+                <AdminDashboard />
+              </PageWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/add"
+          element={
+            <AdminRoute>
+              <PageWrapper>
+                <AdminAddEntry />
+              </PageWrapper>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/edit/:id"
+          element={
+            <AdminRoute>
+              <PageWrapper>
+                <AdminAddEntry />
+              </PageWrapper>
+            </AdminRoute>
           }
         />
         <Route path="*" element={<NotFound />} />

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Euro, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,12 +28,11 @@ export default function AddEntry() {
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
 
-  const [service, setService] = useState('manicure');
-  const [serviceMode, setServiceMode] = useState<'single' | 'multiple'>('single');
+  const [service, setService] = useState('');
   const [price, setPrice] = useState('');
   const [tips, setTips] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
-  const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(false);
   const [recipientRole, setRecipientRole] = useState<'me' | 'master' | 'admin'>('me');
@@ -64,11 +63,6 @@ export default function AddEntry() {
       if (data) {
         const entry = data as any; // Cast to any to bypass outdated Supabase types
         setService(entry.service);
-        if (entry.service.includes(',')) {
-          setServiceMode('multiple');
-        } else {
-          setServiceMode('single');
-        }
         setPrice(entry.price.toString());
         setTips(entry.tips > 0 ? entry.tips.toString() : '');
         setPaymentMethod(entry.payment_method as 'cash' | 'card');
@@ -87,10 +81,28 @@ export default function AddEntry() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!service) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите услугу',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!price || parseFloat(price) <= 0) {
       toast({
         title: 'Ошибка',
         description: 'Введите корректную стоимость',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (parseFloat(tips) > 0 && !tipsPaymentMethod) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите способ оплаты чаевых',
         variant: 'destructive',
       });
       return;
@@ -179,63 +191,86 @@ export default function AddEntry() {
         </div>
         {/* Service Selection */}
         <div className="space-y-2 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Услуга</Label>
-            <div className="flex bg-muted p-1 rounded-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  // If switching to single, keep only the first selected service
-                  if (service.includes(',')) {
-                    setService(service.split(',')[0]);
-                  }
-                  setServiceMode('single');
-                }}
-                className={`px-3 py-1 text-xs rounded-md transition-all ${serviceMode === 'single'
-                  ? 'bg-background shadow text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                Одна услуга
-              </button>
-              <button
-                type="button"
-                onClick={() => setServiceMode('multiple')}
-                className={`px-3 py-1 text-xs rounded-md transition-all ${serviceMode === 'multiple'
-                  ? 'bg-background shadow text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                Несколько
-              </button>
-            </div>
-          </div>
+          <Label className="text-sm font-medium">Услуга</Label>
           <ServiceChips
             selected={service}
             onChange={setService}
-            allowMultiple={serviceMode === 'multiple'}
           />
         </div>
 
-        {/* Price */}
-        <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <Label htmlFor="price" className="text-sm font-medium">
-            Стоимость (€)
-          </Label>
-          <Input
-            id="price"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="input-beauty h-12 text-base"
-            required
-          />
+        {/* Price & Payment Method */}
+        <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div className="w-[30%] space-y-1.5">
+            <Label htmlFor="price" className="text-sm font-medium">
+              Стоимость
+            </Label>
+            <Input
+              id="price"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="input-beauty h-12 text-base"
+              required
+            />
+          </div>
+          <div className="flex-1 space-y-1.5 min-w-0">
+            <Label className="text-sm font-medium">Оплата</Label>
+            <div className="h-12">
+              <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} className="h-full" />
+            </div>
+          </div>
         </div>
 
+        {/* Tips */}
+        <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+          <div className="w-[30%] space-y-1.5">
+            <Label htmlFor="tips" className="text-sm font-medium">
+              Чаевые
+            </Label>
+            <Input
+              id="tips"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={tips}
+              onChange={(e) => setTips(e.target.value)}
+              className="input-beauty h-12 text-base"
+            />
+          </div>
+          <div className="flex-1 space-y-1.5 min-w-0">
+            <Label className="text-sm font-medium">Оплата чаевых</Label>
+            <div className="h-12 flex gap-1 p-1 bg-secondary rounded-xl">
+              <button
+                type="button"
+                onClick={() => setTipsPaymentMethod('cash')}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'cash'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm">Наличные</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipsPaymentMethod('card')}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'card'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm">Карта</span>
+              </button>
+            </div>
+          </div>
+        </div>
         {/* Recipient Selection - Hide for Admin */}
         {!isAdmin && (
           <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
@@ -286,61 +321,6 @@ export default function AddEntry() {
             )}
           </div>
         )}
-
-        {/* Tips */}
-        <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="tips" className="text-sm font-medium">
-              Чаевые (€) <span className="text-muted-foreground font-normal">— опционально</span>
-            </Label>
-            {/* Always show toggle or show if input has value? User wants it visible. */}
-            <div className="flex bg-muted p-1 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setTipsPaymentMethod('cash')}
-                className={`px-3 py-1 text-xs rounded-md transition-all ${tipsPaymentMethod === 'cash'
-                  ? 'bg-background shadow text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                Наличные
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipsPaymentMethod('card')}
-                className={`px-3 py-1 text-xs rounded-md transition-all ${tipsPaymentMethod === 'card'
-                  ? 'bg-background shadow text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                Карта
-              </button>
-            </div>
-          </div>
-          <Input
-            id="tips"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            value={tips}
-            onChange={(e) => {
-              setTips(e.target.value);
-              // Default to main payment method if tips entered
-              if (e.target.value && !tips) {
-                setTipsPaymentMethod(paymentMethod);
-              }
-            }}
-            className="input-beauty h-12 text-base"
-          />
-        </div>
-
-        {/* Payment Method */}
-        <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <Label className="text-sm font-medium">Метод оплаты</Label>
-          <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} />
-        </div>
 
         {/* Submit Button */}
         <div className="pt-2 animate-fade-in" style={{ animationDelay: '0.3s' }}>

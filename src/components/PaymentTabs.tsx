@@ -1,39 +1,40 @@
-import { Banknote, CreditCard } from 'lucide-react';
+import { Euro, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PaymentTabsProps {
   selected: 'cash' | 'card';
   onChange: (method: 'cash' | 'card') => void;
+  className?: string; // Add this
 }
 
-export function PaymentTabs({ selected, onChange }: PaymentTabsProps) {
+export function PaymentTabs({ selected, onChange, className }: PaymentTabsProps) {
   return (
-    <div className="flex gap-2 p-1 bg-secondary rounded-xl">
+    <div className={cn("flex gap-1 p-1 bg-secondary rounded-xl", className)}>
       <button
         type="button"
         onClick={() => onChange('cash')}
         className={cn(
-          'flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200',
+          'flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200',
           selected === 'cash'
-            ? 'bg-card shadow-md text-foreground'
+            ? 'bg-green-500 text-white shadow-md'
             : 'text-muted-foreground hover:text-foreground'
         )}
       >
-        <Banknote size={20} />
-        <span>Наличные</span>
+        <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-xs sm:text-sm">Наличные</span>
       </button>
       <button
         type="button"
         onClick={() => onChange('card')}
         className={cn(
-          'flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-200',
+          'flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200',
           selected === 'card'
-            ? 'bg-card shadow-md text-foreground'
+            ? 'bg-primary text-primary-foreground shadow-md'
             : 'text-muted-foreground hover:text-foreground'
         )}
       >
-        <CreditCard size={20} />
-        <span>Карта</span>
+        <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="text-xs sm:text-sm">Карта</span>
       </button>
     </div>
   );

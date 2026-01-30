@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Euro, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,7 @@ export default function AdminAddEntry() {
   const [price, setPrice] = useState('');
   const [tips, setTips] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
-  const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,6 +41,16 @@ export default function AdminAddEntry() {
       toast({
         title: 'Заполните поля',
         description: 'Услуга и стоимость обязательны',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate tips payment method
+    if (Number(tips) > 0 && !tipsPaymentMethod) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите способ оплаты чаевых',
         variant: 'destructive',
       });
       return;
@@ -123,47 +133,74 @@ export default function AdminAddEntry() {
           <ServiceChips selected={service} onChange={setService} />
         </div>
 
-        {/* Price */}
-        <div className="space-y-2">
-          <Label htmlFor="price" className="text-sm font-medium text-foreground">
-            Стоимость (€)
-          </Label>
-          <Input
-            id="price"
-            type="number"
-            placeholder="0"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="text-lg h-12"
-          />
+        {/* Price & Payment Method */}
+        <div className="flex gap-3">
+          <div className="w-[30%] space-y-2">
+            <Label htmlFor="price" className="text-sm font-medium text-foreground">
+              Стоимость
+            </Label>
+            <Input
+              id="price"
+              type="number"
+              placeholder="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="text-lg h-12"
+            />
+          </div>
+          <div className="flex-1 space-y-2 min-w-0">
+            <Label className="text-sm font-medium text-foreground">Оплата</Label>
+            <div className="h-12">
+              <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} className="h-full" />
+            </div>
+          </div>
         </div>
 
         {/* Tips */}
-        <div className="space-y-2">
-          <Label htmlFor="tips" className="text-sm font-medium text-foreground">
-            Чаевые (€)
-          </Label>
-          <Input
-            id="tips"
-            type="number"
-            placeholder="0"
-            value={tips}
-            onChange={(e) => setTips(e.target.value)}
-            className="text-lg h-12"
-          />
-          {Number(tips) > 0 && (
-            <div className="pt-2">
-              <Label className="text-xs text-muted-foreground mb-2 block">Чаевые получены:</Label>
-              <PaymentTabs selected={tipsPaymentMethod} onChange={setTipsPaymentMethod} />
+        <div className="flex gap-3">
+          <div className="w-[30%] space-y-2">
+            <Label htmlFor="tips" className="text-sm font-medium text-foreground">
+              Чаевые
+            </Label>
+            <Input
+              id="tips"
+              type="number"
+              placeholder="0"
+              value={tips}
+              onChange={(e) => setTips(e.target.value)}
+              className="text-lg h-12"
+            />
+          </div>
+          <div className="flex-1 space-y-2 min-w-0">
+            <Label className="text-sm font-medium text-foreground">Оплата</Label>
+            <div className="h-12 flex gap-1 p-1 bg-secondary rounded-xl">
+              <button
+                type="button"
+                onClick={() => setTipsPaymentMethod('cash')}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'cash'
+                  ? 'bg-green-500 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm">Наличные</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipsPaymentMethod('card')}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'card'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm">Карта</span>
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Payment Method */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-foreground">Способ оплаты</Label>
-          <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} />
-        </div>
+
 
         {/* Submit Button */}
         <Button

@@ -1,4 +1,4 @@
-import { Trash2, CreditCard, Banknote, TriangleAlert } from 'lucide-react';
+import { Trash2, CreditCard, Euro, TriangleAlert } from 'lucide-react';
 import { Entry } from '@/hooks/useEntries';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,7 +65,7 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
         <div className="flex-1 flex items-center gap-3 cursor-pointer overflow-hidden" onClick={onClick}>
           {/* Icon */}
           <div className={`shrink-0 p-2 rounded-full ${isCash ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
-            {isCash ? <Banknote size={16} /> : <CreditCard size={16} />}
+            {isCash ? <Euro size={16} /> : <CreditCard size={16} />}
           </div>
 
           {/* Texts */}

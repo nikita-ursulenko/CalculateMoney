@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 interface ServiceChipsProps {
   selected: string;
   onChange: (service: string) => void;
-  allowMultiple?: boolean;
 }
 
 const services = [
@@ -12,23 +11,18 @@ const services = [
   { id: 'other', label: 'Другое' },
 ];
 
-export function ServiceChips({ selected, onChange, allowMultiple = false }: ServiceChipsProps) {
+export function ServiceChips({ selected, onChange }: ServiceChipsProps) {
   const selectedServices = selected ? selected.split(',') : [];
 
   const toggleService = (id: string) => {
-    if (allowMultiple) {
-      if (selectedServices.includes(id)) {
-        // Remove
-        const newSelected = selectedServices.filter(s => s !== id);
-        onChange(newSelected.join(','));
-      } else {
-        // Add
-        const newSelected = [...selectedServices, id];
-        onChange(newSelected.join(','));
-      }
+    if (selectedServices.includes(id)) {
+      // Remove
+      const newSelected = selectedServices.filter(s => s !== id);
+      onChange(newSelected.join(','));
     } else {
-      // Single selection
-      onChange(id);
+      // Add
+      const newSelected = [...selectedServices, id];
+      onChange(newSelected.join(','));
     }
   };
 

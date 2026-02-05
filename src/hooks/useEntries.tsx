@@ -18,6 +18,7 @@ export interface Entry {
   date_obj?: Date; // Optional helper
   recipient_role?: 'me' | 'master' | 'admin';
   recipient_name?: string;
+  transaction_type?: 'service' | 'debt_salon_to_master' | 'debt_master_to_salon';
 }
 
 export interface NewEntry {
@@ -30,6 +31,7 @@ export interface NewEntry {
   date: string;
   recipient_role?: 'me' | 'master' | 'admin';
   recipient_name?: string;
+  transaction_type?: 'service' | 'debt_salon_to_master' | 'debt_master_to_salon';
 }
 
 export function useEntries(selectedDate?: Date | DateRange) {

@@ -58,6 +58,19 @@ export function useExportData() {
       const rows = dateEntries.map(entry => {
         globalIndex++;
         const isCash = entry.payment_method === 'cash';
+        const type = entry.transaction_type || 'service';
+
+        let methodCol = isCash ? 'Наличные' : 'Карта';
+        let serviceCol = serviceLabels[entry.service] || entry.service;
+        let priceCol = `€${entry.price.toFixed(2)}`;
+
+        if (type === 'debt_salon_to_master') {
+          methodCol = '<span style="color:#27ae60; font-weight:bold;">Салон мне</span>';
+        } else if (type === 'debt_master_to_salon') {
+          methodCol = '<span style="color:#c0392b; font-weight:bold;">Я салону</span>';
+          priceCol = `<span style="color:#c0392b;">-€${entry.price.toFixed(2)}</span>`;
+        }
+
         const recipientText = entry.recipient_role === 'me' || !entry.recipient_role
           ? 'Я'
           : entry.recipient_role === 'admin'
@@ -70,9 +83,9 @@ export function useExportData() {
           <tr class="entry-row">
             <td>${globalIndex}</td>
             <td>${entry.client_name || 'Без имени'}</td>
-            <td>${serviceLabels[entry.service] || entry.service}</td>
-            <td>${isCash ? 'Наличные' : 'Карта'}</td>
-            <td class="price">€${entry.price.toFixed(2)}</td>
+            <td>${serviceCol}</td>
+            <td>${methodCol}</td>
+            <td class="price">${priceCol}</td>
             <td class="tips-cell">${cardTips > 0 ? `€${cardTips.toFixed(2)}` : '-'}</td>
             <td>${recipientText}</td>
           </tr>
@@ -445,7 +458,11 @@ export function useExportData() {
       <tr class="total-row">
         <td colspan="5" class="total-label">ИТОГО:</td>
         <td class="total-value">€${(() => {
-        const servicesTotal = entries.reduce((sum, e) => sum + e.price, 0);
+        const servicesTotal = entries.reduce((sum, e) => {
+          const t = e.transaction_type || 'service';
+          if (t === 'debt_master_to_salon') return sum - e.price;
+          return sum + e.price;
+        }, 0);
         const tipsTotal = entries.reduce((sum, e) => e.tips > 0 && e.tips_payment_method === 'card' ? sum + e.tips : sum, 0);
         return (servicesTotal + tipsTotal).toFixed(2);
       })()}</td>

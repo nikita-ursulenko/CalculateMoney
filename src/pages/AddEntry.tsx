@@ -37,6 +37,7 @@ export default function AddEntry() {
   const [loading, setLoading] = useState(false);
   const [recipientRole, setRecipientRole] = useState<'me' | 'master' | 'admin'>('me');
   const [recipientName, setRecipientName] = useState('');
+  const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
 
   // Load existing data if editing
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function AddEntry() {
         setSelectedDate(new Date(entry.date));
         setRecipientRole((entry.recipient_role as 'me' | 'master' | 'admin') || 'me');
         setRecipientName(entry.recipient_name || '');
+        setTransactionType(entry.transaction_type || 'service');
       }
       setLoading(false);
     };
@@ -99,7 +101,7 @@ export default function AddEntry() {
       return;
     }
 
-    if (!paymentMethod) {
+    if (transactionType === 'service' && !paymentMethod) {
       toast({
         title: 'Ошибка',
         description: 'Выберите способ оплаты',
@@ -108,7 +110,7 @@ export default function AddEntry() {
       return;
     }
 
-    if (parseFloat(tips) > 0 && !tipsPaymentMethod) {
+    if (transactionType === 'service' && parseFloat(tips) > 0 && !tipsPaymentMethod) {
       toast({
         title: 'Ошибка',
         description: 'Выберите способ оплаты чаевых',
@@ -132,7 +134,10 @@ export default function AddEntry() {
       service,
       price: parseFloat(price),
       tips: parseFloat(tips) || 0,
-      payment_method: paymentMethod as 'cash' | 'card',
+      payment_method: transactionType === 'service'
+        ? (paymentMethod as 'cash' | 'card')
+        : (transactionType === 'debt_salon_to_master' ? 'card' : 'cash'),
+      transaction_type: transactionType,
       tips_payment_method: tipsPaymentMethod,
       client_name: clientName,
       date: format(selectedDate, 'yyyy-MM-dd'),
@@ -184,6 +189,30 @@ export default function AddEntry() {
       </header>
 
       <form onSubmit={handleSubmit} className="px-5 space-y-4 animate-slide-up">
+        {/* Transaction Type Toggle */}
+        <div className="grid grid-cols-2 p-1 bg-secondary rounded-xl mb-2">
+          <button
+            type="button"
+            onClick={() => setTransactionType('service')}
+            className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType === 'service'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Клиент
+          </button>
+          <button
+            type="button"
+            onClick={() => setTransactionType('debt_salon_to_master')}
+            className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType !== 'service'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Долг / Корректировка
+          </button>
+        </div>
+
         {/* Client Name */}
         <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.25s' }}>
           <Label htmlFor="clientName" className="text-sm font-medium">
@@ -198,20 +227,29 @@ export default function AddEntry() {
             className="input-beauty h-12"
           />
         </div>
-        {/* Service Selection */}
+        {/* Service Selection or Description */}
         <div className="space-y-2 animate-fade-in">
-          <Label className="text-sm font-medium">Услуга</Label>
-          <ServiceChips
-            selected={service}
-            onChange={setService}
-          />
+          <Label className="text-sm font-medium">{transactionType === 'service' ? 'Услуга' : 'Описание (за что)'}</Label>
+          {transactionType === 'service' ? (
+            <ServiceChips
+              selected={service}
+              onChange={setService}
+            />
+          ) : (
+            <Input
+              placeholder="Например: Ресницы для админа"
+              value={service}
+              onChange={(e) => setService(e.target.value)}
+              className="input-beauty h-12"
+            />
+          )}
         </div>
 
-        {/* Price & Payment Method */}
+        {/* Price & Payment/Direction */}
         <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <div className="w-[30%] space-y-1.5">
             <Label htmlFor="price" className="text-sm font-medium">
-              Стоимость
+              {transactionType === 'service' ? 'Стоимость' : 'Сумма'}
             </Label>
             <Input
               id="price"
@@ -227,61 +265,90 @@ export default function AddEntry() {
             />
           </div>
           <div className="flex-1 space-y-1.5 min-w-0">
-            <Label className="text-sm font-medium">Оплата</Label>
-            <div className="h-12">
-              <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} className="h-full" />
-            </div>
+            <Label className="text-sm font-medium">
+              {transactionType === 'service' ? 'Оплата' : 'Кто кому должен'}
+            </Label>
+            {transactionType === 'service' ? (
+              <div className="h-12">
+                <PaymentTabs selected={paymentMethod} onChange={setPaymentMethod} className="h-full" />
+              </div>
+            ) : (
+              <div className="flex gap-2 h-12">
+                <button
+                  type="button"
+                  onClick={() => setTransactionType('debt_salon_to_master')}
+                  className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_salon_to_master'
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    }`}
+                >
+                  Салон мне
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransactionType('debt_master_to_salon')}
+                  className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_master_to_salon'
+                      ? 'border-red-500 bg-red-50 text-red-700'
+                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    }`}
+                >
+                  Я салону
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Tips */}
-        <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="w-[30%] space-y-1.5">
-            <Label htmlFor="tips" className="text-sm font-medium">
-              Чаевые
-            </Label>
-            <Input
-              id="tips"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={tips}
-              onChange={(e) => setTips(e.target.value)}
-              className="input-beauty h-12 text-base"
-            />
-          </div>
-          <div className="flex-1 space-y-1.5 min-w-0">
-            <Label className="text-sm font-medium">Оплата чаевых</Label>
-            <div className="h-12 flex gap-1 p-1 bg-secondary rounded-xl">
-              <button
-                type="button"
-                onClick={() => setTipsPaymentMethod('cash')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'cash'
-                  ? 'bg-green-500 text-white shadow-md'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm">Наличные</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipsPaymentMethod('card')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'card'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm">Карта</span>
-              </button>
+        {transactionType === 'service' && (
+          <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <div className="w-[30%] space-y-1.5">
+              <Label htmlFor="tips" className="text-sm font-medium">
+                Чаевые
+              </Label>
+              <Input
+                id="tips"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={tips}
+                onChange={(e) => setTips(e.target.value)}
+                className="input-beauty h-12 text-base"
+              />
+            </div>
+            <div className="flex-1 space-y-1.5 min-w-0">
+              <Label className="text-sm font-medium">Оплата чаевых</Label>
+              <div className="h-12 flex gap-1 p-1 bg-secondary rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setTipsPaymentMethod('cash')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'cash'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                  <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm">Наличные</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTipsPaymentMethod('card')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-1 rounded-lg font-medium transition-all duration-200 ${tipsPaymentMethod === 'card'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm">Карта</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         {/* Recipient Selection - Hide for Admin */}
-        {!isAdmin && (
+        {!isAdmin && transactionType === 'service' && (
           <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
             <Label className="text-sm font-medium">Кто принял оплату?</Label>
             <div className="grid grid-cols-3 gap-2">

@@ -98,6 +98,23 @@ export default function AdminDashboard() {
       const tips = Number(entry.tips);
       const isCash = entry.payment_method === 'cash';
       const role = entry.recipient_role || 'me';
+      const type = entry.transaction_type || 'service';
+
+      if (type === 'debt_salon_to_master') {
+        return {
+          ...acc,
+          balance: acc.balance + price,
+          income: acc.income + price,
+        };
+      }
+
+      if (type === 'debt_master_to_salon') {
+        return {
+          ...acc,
+          balance: acc.balance - price,
+          salonIncome: (acc.salonIncome || 0) + price,
+        };
+      }
 
       const actsLikeCard = !isCash || role === 'admin';
       const rate = actsLikeCard ? rateCard : rateCash;

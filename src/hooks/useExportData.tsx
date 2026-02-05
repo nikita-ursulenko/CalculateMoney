@@ -30,6 +30,58 @@ export function useExportData() {
       ? `${format(dateRange.from, 'd MMMM yyyy', { locale: ru })} - ${format(dateRange.to, 'd MMMM yyyy', { locale: ru })}`
       : format(dateRange.from, 'd MMMM yyyy', { locale: ru });
 
+    // Group and render entries by date
+    const entriesByDate: Record<string, Entry[]> = {};
+    entries.forEach(entry => {
+      const dateKey = entry.date;
+      if (!entriesByDate[dateKey]) {
+        entriesByDate[dateKey] = [];
+      }
+      entriesByDate[dateKey].push(entry);
+    });
+
+    const sortedDates = Object.keys(entriesByDate).sort();
+
+    let globalIndex = 0;
+    const tableRowsHtml = sortedDates.map(dateKey => {
+      const dateEntries = entriesByDate[dateKey];
+      const dateLabel = format(new Date(dateKey), 'd MMMM yyyy, EEEE', { locale: ru });
+
+      const headerRow = `
+        <tr class="date-header-row">
+          <td colspan="7" style="background: #dfe6e9; color: #2d3436; font-weight: bold; font-size: 13px; padding: 8px 12px; text-transform: uppercase; border: 1px solid #bdc3c7;">
+            ${dateLabel}
+          </td>
+        </tr>
+      `;
+
+      const rows = dateEntries.map(entry => {
+        globalIndex++;
+        const isCash = entry.payment_method === 'cash';
+        const recipientText = entry.recipient_role === 'me' || !entry.recipient_role
+          ? 'Я'
+          : entry.recipient_role === 'admin'
+            ? 'Администратор'
+            : entry.recipient_name || 'Мастер';
+
+        const cardTips = (entry.tips > 0 && entry.tips_payment_method === 'card') ? entry.tips : 0;
+
+        return `
+          <tr class="entry-row">
+            <td>${globalIndex}</td>
+            <td>${entry.client_name || 'Без имени'}</td>
+            <td>${serviceLabels[entry.service] || entry.service}</td>
+            <td>${isCash ? 'Наличные' : 'Карта'}</td>
+            <td class="price">€${entry.price.toFixed(2)}</td>
+            <td class="tips-cell">${cardTips > 0 ? `€${cardTips.toFixed(2)}` : '-'}</td>
+            <td>${recipientText}</td>
+          </tr>
+        `;
+      }).join('');
+
+      return headerRow + rows;
+    }).join('');
+
     // Build HTML content
     const htmlContent = `
 <!DOCTYPE html>
@@ -386,28 +438,8 @@ export function useExportData() {
       </tr>
       
       <!-- Entry Rows -->
-      ${entries.map((entry, index) => {
-      const isCash = entry.payment_method === 'cash';
-      const recipientText = entry.recipient_role === 'me' || !entry.recipient_role
-        ? 'Я'
-        : entry.recipient_role === 'admin'
-          ? 'Администратор'
-          : entry.recipient_name || 'Мастер';
-
-      const cardTips = (entry.tips > 0 && entry.tips_payment_method === 'card') ? entry.tips : 0;
-
-      return `
-          <tr class="entry-row">
-            <td>${index + 1}</td>
-            <td>${entry.client_name || 'Без имени'}</td>
-            <td>${serviceLabels[entry.service] || entry.service}</td>
-            <td>${isCash ? 'Наличные' : 'Карта'}</td>
-            <td class="price">€${entry.price.toFixed(2)}</td>
-            <td class="tips-cell">${cardTips > 0 ? `€${cardTips.toFixed(2)}` : '-'}</td>
-            <td>${recipientText}</td>
-          </tr>
-        `;
-    }).join('')}
+      <!-- Entry Rows -->
+      ${tableRowsHtml}
       
       <!-- Total Row -->
       <tr class="total-row">

@@ -41,18 +41,7 @@ export default function AdminDashboard() {
       };
     }
 
-    const savedDate = localStorage.getItem('admin_dashboard_date');
-    if (savedDate) {
-      try {
-        const parsed = JSON.parse(savedDate);
-        return {
-          from: parseISO(parsed.from),
-          to: parsed.to ? parseISO(parsed.to) : undefined,
-        };
-      } catch (e) {
-        console.error('Failed to parse saved date', e);
-      }
-    }
+
 
     return {
       from: new Date(),
@@ -89,12 +78,7 @@ export default function AdminDashboard() {
     }
     setSearchParams(params, { replace: true });
 
-    if (selectedDate?.from) {
-      localStorage.setItem('admin_dashboard_date', JSON.stringify({
-        from: format(selectedDate.from, 'yyyy-MM-dd'),
-        to: selectedDate.to ? format(selectedDate.to, 'yyyy-MM-dd') : undefined
-      }));
-    }
+
   }, [selectedMasterId, selectedDate, setSearchParams]);
 
   const loading = mastersLoading || entriesLoading;

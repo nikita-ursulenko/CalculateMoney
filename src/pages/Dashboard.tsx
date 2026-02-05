@@ -33,19 +33,7 @@ export default function Dashboard() {
       };
     }
 
-    // 2. Secondary: LocalStorage
-    const savedDate = localStorage.getItem('dashboard_date');
-    if (savedDate) {
-      try {
-        const parsed = JSON.parse(savedDate);
-        return {
-          from: parseISO(parsed.from),
-          to: parsed.to ? parseISO(parsed.to) : undefined,
-        };
-      } catch (e) {
-        console.error('Failed to parse saved date', e);
-      }
-    }
+
 
     // 3. Fallback: Today
     return {
@@ -65,13 +53,7 @@ export default function Dashboard() {
     }
     setSearchParams(params, { replace: true });
 
-    // Save to LocalStorage
-    if (selectedDate?.from) {
-      localStorage.setItem('dashboard_date', JSON.stringify({
-        from: format(selectedDate.from, 'yyyy-MM-dd'),
-        to: selectedDate.to ? format(selectedDate.to, 'yyyy-MM-dd') : undefined
-      }));
-    }
+
   }, [selectedDate, setSearchParams]);
   const [showIncome, setShowIncome] = useState(true);
   const { settings, loading: settingsLoading } = useSettings();

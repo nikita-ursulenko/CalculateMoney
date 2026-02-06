@@ -95,7 +95,54 @@ export function useExportData() {
         `;
       }).join('');
 
-      return headerRow + rows;
+      // Calculate Daily Summaries
+      let dayPrice = 0;
+      let dayMe = 0;
+      let daySalon = 0;
+
+      dateEntries.forEach(e => {
+        const isCash = e.payment_method === 'cash';
+        const type = e.transaction_type || 'service';
+        const role = e.recipient_role || 'me';
+        const price = Number(e.price);
+        const tips = Number(e.tips);
+
+        if (type === 'debt_salon_to_master') {
+          dayMe += price;
+          daySalon -= price;
+        } else if (type === 'debt_master_to_salon') {
+          dayMe -= price;
+          daySalon += price;
+        } else {
+          // Service
+          const actsLikeCard = !isCash || role === 'admin';
+          const rate = actsLikeCard ? rateCard : rateCash;
+
+          const myShare = price * (rate / 100);
+          const salonShare = price - myShare;
+
+          const tipsMethod = e.tips_payment_method || 'cash';
+          const myTips = tipsMethod === 'cash' ? tips : tips * (rateCard / 100);
+
+          dayPrice += price;
+          dayMe += (myShare + myTips);
+          daySalon += salonShare;
+        }
+      });
+
+      const summaryRow = `
+        <tr class="date-summary-row" style="background: #f1f2f6; font-weight: bold; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
+          <td colspan="4" style="text-align: right; padding: 8px 12px; color: #7f8c8d;">Итог за день:</td>
+          <td style="color: #2c3e50;">€${dayPrice.toFixed(2)}</td>
+          <td colspan="2" style="font-size: 11px; color: #2c3e50;">
+             <span style="color: #27ae60;">Мне: €${dayMe.toFixed(2)}</span>
+             <span style="margin: 0 4px; color: #bdc3c7;">|</span>
+             <span style="color: #2980b9;">Салону: €${daySalon.toFixed(2)}</span>
+          </td>
+        </tr>
+      `;
+
+      return headerRow + rows + summaryRow;
     }).join('');
 
     // Build HTML content
@@ -483,8 +530,8 @@ export function useExportData() {
 
 
   <div class="balance-box">
-    <div class="label">${dailyStats.balance >= 0 ? 'К ВАМ ОТ САЛОНА' : 'ОТ ВАС САЛОНУ'}</div>
-    <div class="value">${dailyStats.balance >= 0 ? '+' : ''}€${dailyStats.balance.toFixed(2)}</div>
+    <div class="label">${dailyStats.balance >= 0 ? 'ИТОГО МНЕ' : 'ИТОГО САЛОНУ'}</div>
+    <div class="value">${dailyStats.balance >= 0 ? '+' : '-'}€${Math.abs(dailyStats.balance).toFixed(2)}</div>
   </div>
 
   <div class="footer">

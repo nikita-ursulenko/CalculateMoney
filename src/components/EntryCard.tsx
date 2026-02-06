@@ -1,4 +1,4 @@
-import { Trash2, CreditCard, Euro, TriangleAlert } from 'lucide-react';
+import { Trash2, CreditCard, Euro, TriangleAlert, Handshake } from 'lucide-react';
 import { Entry } from '@/hooks/useEntries';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +26,7 @@ interface EntryCardProps {
 
 export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true, onClick, isAdminView = false, isOwnerView = false }: EntryCardProps) {
   const isCash = entry.payment_method === 'cash';
+  const isDebt = entry.transaction_type && entry.transaction_type !== 'service';
   const rate = isCash ? rateCash : rateCard;
 
   // Calculate Service Balance
@@ -64,8 +65,13 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
         {/* Left: Info */}
         <div className="flex-1 flex items-center gap-3 cursor-pointer overflow-hidden" onClick={onClick}>
           {/* Icon */}
-          <div className={`shrink-0 p-2 rounded-full ${isCash ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
-            {isCash ? <Euro size={16} /> : <CreditCard size={16} />}
+          <div className={`shrink-0 p-2 rounded-full ${isDebt
+            ? 'bg-purple-100 text-purple-600'
+            : isCash
+              ? 'bg-success/10 text-success'
+              : 'bg-primary/10 text-primary'
+            }`}>
+            {isDebt ? <Handshake size={16} /> : (isCash ? <Euro size={16} /> : <CreditCard size={16} />)}
           </div>
 
           {/* Texts */}

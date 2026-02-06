@@ -195,8 +195,8 @@ export default function AddEntry() {
             type="button"
             onClick={() => setTransactionType('service')}
             className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType === 'service'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
             Клиент
@@ -205,11 +205,11 @@ export default function AddEntry() {
             type="button"
             onClick={() => setTransactionType('debt_salon_to_master')}
             className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType !== 'service'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
-            Долг / Корректировка
+            Доп. оплата
           </button>
         </div>
 
@@ -278,8 +278,8 @@ export default function AddEntry() {
                   type="button"
                   onClick={() => setTransactionType('debt_salon_to_master')}
                   className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_salon_to_master'
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   Салон мне
@@ -288,8 +288,8 @@ export default function AddEntry() {
                   type="button"
                   onClick={() => setTransactionType('debt_master_to_salon')}
                   className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_master_to_salon'
-                      ? 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   Я салону

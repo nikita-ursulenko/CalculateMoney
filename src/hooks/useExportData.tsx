@@ -42,6 +42,34 @@ export function useExportData() {
 
     const sortedDates = Object.keys(entriesByDate).sort();
 
+    const calculateDayBalance = (entries: Entry[]) => {
+      const balance = entries.reduce((acc, entry) => {
+        const price = entry.price;
+        const tips = entry.tips;
+        const isCash = entry.payment_method === 'cash';
+        const role = entry.recipient_role || 'me';
+        const type = entry.transaction_type || 'service';
+
+        if (type === 'debt_salon_to_master') return acc + price;
+        if (type === 'debt_master_to_salon') return acc - price;
+
+        const actsLikeCard = !isCash || role === 'admin';
+        const rate = actsLikeCard ? rateCard : rateCash;
+        const tipsPaymentMethod = entry.tips_payment_method || 'cash';
+
+        const serviceBalance = actsLikeCard
+          ? price * (rate / 100)
+          : -(price * (1 - rate / 100));
+
+        const tipsBalance = tipsPaymentMethod === 'cash'
+          ? 0
+          : tips * (rateCard / 100);
+
+        return acc + serviceBalance + tipsBalance;
+      }, 0);
+      return balance;
+    };
+
     let globalIndex = 0;
     const tableRowsHtml = sortedDates.map(dateKey => {
       const dateEntries = entriesByDate[dateKey];
@@ -95,49 +123,17 @@ export function useExportData() {
         `;
       }).join('');
 
-      // Calculate Daily Summaries
-      let dayPrice = 0;
-      let dayMe = 0;
-      let daySalon = 0;
-
-      dateEntries.forEach(e => {
-        const isCash = e.payment_method === 'cash';
-        const type = e.transaction_type || 'service';
-        const role = e.recipient_role || 'me';
-        const price = Number(e.price);
-        const tips = Number(e.tips);
-
-        if (type === 'debt_salon_to_master') {
-          dayMe += price;
-          daySalon -= price;
-        } else if (type === 'debt_master_to_salon') {
-          dayMe -= price;
-          daySalon += price;
-        } else {
-          // Service
-          const actsLikeCard = !isCash || role === 'admin';
-          const rate = actsLikeCard ? rateCard : rateCash;
-
-          const myShare = price * (rate / 100);
-          const salonShare = price - myShare;
-
-          const tipsMethod = e.tips_payment_method || 'cash';
-          const myTips = tipsMethod === 'cash' ? tips : tips * (rateCard / 100);
-
-          dayPrice += price;
-          dayMe += (myShare + myTips);
-          daySalon += salonShare;
-        }
-      });
+      const dayBalance = calculateDayBalance(dateEntries);
+      const isPositive = dayBalance >= 0;
+      const label = isPositive ? 'Салон мне:' : 'Я салону:';
+      const color = isPositive ? '#27ae60' : '#c0392b';
+      const sign = isPositive ? '+' : '-';
 
       const summaryRow = `
-        <tr class="date-summary-row" style="background: #f1f2f6; font-weight: bold; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; padding: 8px 12px; color: #7f8c8d;">Итог за день:</td>
-          <td style="color: #2c3e50;">€${dayPrice.toFixed(2)}</td>
-          <td colspan="2" style="font-size: 11px; color: #2c3e50;">
-             <span style="color: #27ae60;">Мне: €${dayMe.toFixed(2)}</span>
-             <span style="margin: 0 4px; color: #bdc3c7;">|</span>
-             <span style="color: #2980b9;">Салону: €${daySalon.toFixed(2)}</span>
+        <tr class="daily-summary-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
+          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ИТОГО ЗА ДЕНЬ:</td>
+          <td colspan="3" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px;">
+            ${label} ${sign}€${Math.abs(dayBalance).toFixed(2)}
           </td>
         </tr>
       `;

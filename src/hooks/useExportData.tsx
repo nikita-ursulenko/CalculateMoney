@@ -93,13 +93,13 @@ export function useExportData() {
           .split(',')
           .map(s => serviceLabels[s.trim()] || s.trim())
           .join(', ');
-        let priceCol = `€${entry.price.toFixed(2)}`;
+        let priceCol = `${entry.price.toFixed(2)}€`;
 
         if (type === 'debt_salon_to_master') {
           methodCol = '<span style="color:#27ae60; font-weight:bold;">Салон мне</span>';
         } else if (type === 'debt_master_to_salon') {
           methodCol = '<span style="color:#c0392b; font-weight:bold;">Я салону</span>';
-          priceCol = `<span style="color:#c0392b;">-€${entry.price.toFixed(2)}</span>`;
+          priceCol = `<span style="color:#c0392b;">-${entry.price.toFixed(2)}€</span>`;
         }
 
         const recipientText = entry.recipient_role === 'me' || !entry.recipient_role
@@ -117,7 +117,7 @@ export function useExportData() {
             <td>${serviceCol}</td>
             <td>${methodCol}</td>
             <td class="price">${priceCol}</td>
-            <td class="tips-cell">${cardTips > 0 ? `€${cardTips.toFixed(2)}` : '-'}</td>
+            <td class="tips-cell">${cardTips > 0 ? `${cardTips.toFixed(2)}€` : '-'}</td>
             <td>${recipientText}</td>
           </tr>
         `;
@@ -133,7 +133,7 @@ export function useExportData() {
         <tr class="daily-summary-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
           <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ИТОГО ЗА ДЕНЬ:</td>
           <td colspan="3" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px;">
-            ${label} ${sign}€${Math.abs(dayBalance).toFixed(2)}
+            ${label} ${sign}${Math.abs(dayBalance).toFixed(2)}€
           </td>
         </tr>
       `;
@@ -509,7 +509,7 @@ export function useExportData() {
       <!-- Total Row -->
       <tr class="total-row">
         <td colspan="5" class="total-label">ИТОГО:</td>
-        <td class="total-value">€${(() => {
+        <td class="total-value">${(() => {
         const servicesTotal = entries.reduce((sum, e) => {
           const t = e.transaction_type || 'service';
           if (t === 'debt_master_to_salon') return sum - e.price;
@@ -517,7 +517,7 @@ export function useExportData() {
         }, 0);
         const tipsTotal = entries.reduce((sum, e) => e.tips > 0 && e.tips_payment_method === 'card' ? sum + e.tips : sum, 0);
         return (servicesTotal + tipsTotal).toFixed(2);
-      })()}</td>
+      })()}€</td>
         <td></td>
       </tr>
       
@@ -527,7 +527,7 @@ export function useExportData() {
 
   <div class="balance-box">
     <div class="label">${dailyStats.balance >= 0 ? 'ИТОГО МНЕ' : 'ИТОГО САЛОНУ'}</div>
-    <div class="value">${dailyStats.balance >= 0 ? '+' : '-'}€${Math.abs(dailyStats.balance).toFixed(2)}</div>
+    <div class="value">${dailyStats.balance >= 0 ? '+' : '-'}${Math.abs(dailyStats.balance).toFixed(2)}€</div>
   </div>
 
   <div class="footer">

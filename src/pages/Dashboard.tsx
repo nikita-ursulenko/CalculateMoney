@@ -55,6 +55,18 @@ export default function Dashboard() {
 
 
   }, [selectedDate, setSearchParams]);
+
+  // Reset to Today if URL params are cleared (e.g. clicking Home)
+  useEffect(() => {
+    const fromParam = searchParams.get('from');
+    if (!fromParam) {
+      const today = new Date();
+      if (selectedDate?.from && !isSameDay(selectedDate.from, today)) {
+        setSelectedDate({ from: today, to: undefined });
+      }
+    }
+  }, [searchParams, selectedDate]);
+
   const [showIncome, setShowIncome] = useState(true);
   const { settings, loading: settingsLoading } = useSettings();
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);

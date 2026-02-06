@@ -30,9 +30,17 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
   const rate = isCash ? rateCash : rateCard;
 
   // Calculate Service Balance
-  let balance = isCash
-    ? -(entry.price * (1 - rate / 100)) // Master owes Salon (negative for master)
-    : entry.price * (rate / 100); // Salon owes Master (positive for master)
+  let balance: number;
+
+  if (entry.transaction_type === 'debt_salon_to_master') {
+    balance = entry.price;
+  } else if (entry.transaction_type === 'debt_master_to_salon') {
+    balance = -entry.price;
+  } else {
+    balance = isCash
+      ? -(entry.price * (1 - rate / 100))
+      : entry.price * (rate / 100);
+  }
 
   // Calculate Tips Balance
   if (entry.tips > 0 && entry.tips_payment_method === 'card') {

@@ -61,7 +61,10 @@ export function useExportData() {
         const type = entry.transaction_type || 'service';
 
         let methodCol = isCash ? 'Наличные' : 'Карта';
-        let serviceCol = serviceLabels[entry.service] || entry.service;
+        let serviceCol = entry.service
+          .split(',')
+          .map(s => serviceLabels[s.trim()] || s.trim())
+          .join(', ');
         let priceCol = `€${entry.price.toFixed(2)}`;
 
         if (type === 'debt_salon_to_master') {
@@ -393,10 +396,15 @@ export function useExportData() {
     
     .entries-table tbody tr {
       background: white;
+      page-break-inside: avoid;
     }
     
     .entries-table tbody tr:nth-child(even) {
       background: #f8f9fa;
+    }
+
+    tr {
+      page-break-inside: avoid;
     }
     
     .entries-table .price {
@@ -409,6 +417,7 @@ export function useExportData() {
       background: #ecf0f1;
       font-weight: bold;
       border-top: 2px solid #34495e;
+      page-break-inside: avoid;
     }
     
     .entries-table .total-label {

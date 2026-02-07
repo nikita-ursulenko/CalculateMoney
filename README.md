@@ -1,73 +1,130 @@
-# Welcome to your Lovable project
+# 💰 Calculate Money
 
-## Project info
+<div align="center">
+  <img src="public/favicon.ico" alt="Logo" width="80" height="80">
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+  <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap; margin: 10px 0;">
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
+    <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+    <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
+    <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
+  </div>
+  <h3 align="center">Твой личный финансовый помощник в салоне красоты</h3>
+  <p align="center">
+    Продвинутая система для мастеров и администраторов: учет клиентов, услуг, чаевых и автоматический расчет заработка.
+    <br />
+    <a href="#функционал"><strong>Изучить функционал »</strong></a>
+    <br />
+    <br />
+    <a href="#установка">Установка</a>
+    ·
+    <a href="#скриншоты">Скриншоты</a>
+    ·
+    <a href="#контакты">Контакты</a>
+  </p>
+</div>
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 О Проекте
 
-**Use Lovable**
+**Calculate Money** — это современное веб-приложение (PWA), созданное, чтобы забыть о тетрадках и сложных Excel-таблицах. Оно позволяет вести учет каждой услуги за секунды, автоматически считает проценты, чаевые и подводит баланс в конце дня.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+**Для кого:**
+*   💅 **Мастера:** Видят свою зарплату в реальном времени, историю клиентов и долговые обязательства.
+*   🏢 **Администраторы/Владельцы:** Контролируют общую выручку, видят занятость мастеров и сводные отчеты.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Ключевые Возможности
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📝 Учет Записей
+*   **Быстрый ввод:** Добавление клиента, выбор услуг (Маникюр, Педикюр и др.) и типа оплаты (Наличные/Карта/Смешанная) за пару кликов.
+*   **Гибкие настройки:** Учет ситуаций, когда клиент платит Админу или переводит Мастеру на карту.
+*   **Чаевые:** Отдельный учет чаевых (Наличные остаются у мастера, Карточные делятся или учитываются в балансе).
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 💸 Финансы и Баланс
+*   **Умный расчет:** Приложение само считает, кто кому должен в конце дня (Мастер Салону или Салон Мастеру) с учетом установленного процента (например, 40/60).
+*   **Долги и Корректировки:** Специальный режим для записи ручных долгов ("Взял из кассы", "Купил материалы", "Салон оплатил обед").
+*   **Проценты:** Настройка разных процентов для Наличных и Безналичных оплат.
 
-Follow these steps:
+### 📊 Отчетность
+*   **PDF Экспорт:** Генерация профессионального чека/отчета за любой период.
+    *   Группировка по дням.
+    *   Подсчет итогов за каждый день: "Салон мне: +40€".
+    *   Общий итог за период.
+*   **Excel:** Возможность выгрузки данных для детальной аналитики.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 📱 Удобство (UX/UI)
+*   **PWA:** Можно установить как приложение на телефон.
+*   **Роли:** Разграничение прав доступа (Мастер видит только своё, Админ — всё).
+*   **Dark Mode:** Стильный и понятный интерфейс.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🛠 Технический Стек
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+*   **Frontend:** React, TypeScript, Vite
+*   **UI Kit:** Tailwind CSS, Shadcn UI, Lucide Icons
+*   **Backend/BaaS:** Supabase (PostgreSQL, Auth, Realtime)
+*   **PDF Generation:** html2pdf.js + Custom CSS
+*   **State Management:** React Hooks + Context
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📸 Скриншоты
 
-**Use GitHub Codespaces**
+| Дашборд Мастера | Добавление Записи | PDF Отчет |
+|:---:|:---:|:---:|
+| *Баланс, список клиентов и итоги дня* | *Удобная форма с выбором услуг и оплаты* | *Профессиональная верстка с итогами* |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 📦 Установка и Запуск
 
-This project is built with:
+1.  **Клонируйте репозиторий**
+    ```bash
+    git clone https://github.com/nikita-ursulenko/CalculateMoney.git
+    ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+2.  **Установите зависимости**
+    ```bash
+    npm install
+    ```
 
-## How can I deploy this project?
+3.  **Настройте окружение (.env)**
+    Создайте файл `.env` и добавьте ключи Supabase:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+4.  **Запустите проект**
+    ```bash
+    npm run dev
+    ```
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 💡 Как это работает (Логика Расчета)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Система использует уникальную логику "Баланса" для расчета взаиморасчетов:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1.  **Если Мастер принял Наличные:**
+    *   Деньги у мастера.
+    *   Мастер должен отдать Салону процент (например, 60%).
+    *   *Баланс Мастера уменьшается.*
+
+2.  **Если Клиент платил Картой (в кассу):**
+    *   Деньги у Салона.
+    *   Салон должен отдать Мастеру его процент (например, 40%).
+    *   *Баланс Мастера увеличивается.*
+
+3.  **Итог Дня:**
+    *   Суммируются все плюсы и минусы.
+    *   Результат показывает, кто кому должен передать деньги в конце смены.
+
+---
+
+Создано с ❤️ для beauty-индустрии.

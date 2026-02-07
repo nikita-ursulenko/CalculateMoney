@@ -1,8 +1,6 @@
 # 💰 Calculate Money
 
 <div align="center">
-  <img src="public/favicon.ico" alt="Logo" width="80" height="80">
-
   <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap; margin: 10px 0;">
     <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
     <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
@@ -10,19 +8,6 @@
     <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
     <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
   </div>
-  <h3 align="center">Твой личный финансовый помощник в салоне красоты</h3>
-  <p align="center">
-    Продвинутая система для мастеров и администраторов: учет клиентов, услуг, чаевых и автоматический расчет заработка.
-    <br />
-    <a href="#функционал"><strong>Изучить функционал »</strong></a>
-    <br />
-    <br />
-    <a href="#установка">Установка</a>
-    ·
-    <a href="#скриншоты">Скриншоты</a>
-    ·
-    <a href="#контакты">Контакты</a>
-  </p>
 </div>
 
 ---

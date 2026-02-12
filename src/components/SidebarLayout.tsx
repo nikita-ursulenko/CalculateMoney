@@ -13,7 +13,11 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const isAddPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
-    const showPlusButton = location.pathname === '/dashboard' || location.pathname === '/admin' || location.pathname === '/admin/';
+    const showPlusButton = location.pathname === '/dashboard' ||
+        location.pathname === '/admin' ||
+        location.pathname === '/admin/' ||
+        location.pathname === '/services' ||
+        location.pathname === '/clients';
 
     return (
         <SidebarProvider>
@@ -39,6 +43,16 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                                 size="icon"
                                 className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-primary text-primary-foreground hover:scale-110 active:scale-95 transition-all duration-300 z-40"
                                 onClick={() => {
+                                    if (location.pathname === '/services') {
+                                        window.dispatchEvent(new CustomEvent('open-service-create'));
+                                        return;
+                                    }
+
+                                    if (location.pathname === '/clients') {
+                                        window.dispatchEvent(new CustomEvent('open-client-create'));
+                                        return;
+                                    }
+
                                     const searchParams = new URLSearchParams(location.search);
                                     const masterId = searchParams.get('master');
                                     const date = searchParams.get('date') || searchParams.get('from');

@@ -12,6 +12,8 @@ import SettingsPage from "./pages/SettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAddEntry from "./pages/AdminAddEntry";
 import CalendarPage from "./pages/CalendarPage";
+import ServicesPage from "./pages/ServicesPage";
+import ClientsPage from "./pages/ClientsPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { SidebarLayout } from './components/SidebarLayout';
@@ -178,6 +180,26 @@ function AppRoutes() {
               <ProtectedRoute>
                 <PageWrapper custom={direction}>
                   <CalendarPage />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <ServicesPage />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <ClientsPage />
                 </PageWrapper>
               </ProtectedRoute>
             }

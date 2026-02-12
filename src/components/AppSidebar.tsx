@@ -1,4 +1,4 @@
-import { Home, Calendar, Settings, Shield, Plus, LogOut } from "lucide-react";
+import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     Sidebar,
@@ -27,7 +27,9 @@ export function AppSidebar() {
 
     const menuItems = [
         { title: "Главная", icon: Home, path: "/dashboard" },
+        { title: "Клиенты", icon: Users, path: "/clients" },
         { title: "Календарь", icon: Calendar, path: "/calendar" },
+        { title: "Услуги", icon: Scissors, path: "/services" },
         { title: "Настройки", icon: Settings, path: "/settings" },
     ];
 

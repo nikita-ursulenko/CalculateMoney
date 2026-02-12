@@ -37,6 +37,8 @@ export default function AddEntry() {
   const [recipientRole, setRecipientRole] = useState<'me' | 'master' | 'admin'>('me');
   const [recipientName, setRecipientName] = useState('');
   const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
+  const [startTime, setStartTime] = useState('10:00');
+  const [endTime, setEndTime] = useState('11:00');
 
   // Load existing data if editing
   useEffect(() => {
@@ -72,6 +74,8 @@ export default function AddEntry() {
         setRecipientRole((entry.recipient_role as 'me' | 'master' | 'admin') || 'me');
         setRecipientName(entry.recipient_name || '');
         setTransactionType(entry.transaction_type || 'service');
+        setStartTime(entry.start_time || '10:00');
+        setEndTime(entry.end_time || '11:00');
       }
       setLoading(false);
     };
@@ -142,6 +146,8 @@ export default function AddEntry() {
       date: format(selectedDate, 'yyyy-MM-dd'),
       recipient_role: recipientRole,
       recipient_name: recipientRole === 'master' ? recipientName : null,
+      start_time: startTime,
+      end_time: endTime,
     };
 
     let result;
@@ -196,7 +202,7 @@ export default function AddEntry() {
         </Button>
       </header>
 
-      <form onSubmit={handleSubmit} className="px-5 space-y-4 animate-slide-up">
+      <form onSubmit={handleSubmit} className="px-5 space-y-3 animate-slide-up">
         {/* Transaction Type Toggle */}
         <div className="grid grid-cols-2 p-1 bg-secondary rounded-xl mb-2">
           <button
@@ -235,6 +241,32 @@ export default function AddEntry() {
             className="input-beauty h-12"
           />
         </div>
+
+        {/* Start and End Time - Only for service transactions */}
+        {transactionType === 'service' && (
+          <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="startTime" className="text-sm font-medium">Начало</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="input-beauty h-12"
+              />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="endTime" className="text-sm font-medium">Окончание</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="input-beauty h-12"
+              />
+            </div>
+          </div>
+        )}
         {/* Service Selection or Description */}
         <div className="space-y-2 animate-fade-in">
           <Label className="text-sm font-medium">{transactionType === 'service' ? 'Услуга' : 'Описание (за что)'}</Label>

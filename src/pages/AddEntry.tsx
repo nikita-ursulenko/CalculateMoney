@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { ArrowLeft, Loader2, Euro, CreditCard, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Euro, CreditCard, X, Search, User, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +39,22 @@ export default function AddEntry() {
   const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
+  const [clientSelectionMode, setClientSelectionMode] = useState<'manual' | 'list'>('list');
+  const [searchClientQuery, setSearchClientQuery] = useState('');
+
+  // Real apps would fetch this from Supabase. Using the same mock for consistency.
+  const [clients] = useState([
+    { id: '1', name: 'Анна Петрова', phone: '+7 900 123-45-67' },
+    { id: '2', name: 'Елена Сидорова', phone: '+7 900 765-43-21' },
+    { id: '3', name: 'Мария Иванова', phone: '+7 900 111-22-33' },
+    { id: '4', name: 'Ольга Кузнецова', phone: '+7 900 444-55-66' },
+    { id: '5', name: 'Светлана Попова', phone: '+7 900 999-88-77' },
+  ]);
+
+  const filteredClients = clients.filter(c =>
+    c.name.toLowerCase().includes(searchClientQuery.toLowerCase()) ||
+    c.phone.includes(searchClientQuery)
+  );
 
   // Load existing data if editing
   useEffect(() => {
@@ -227,19 +243,113 @@ export default function AddEntry() {
           </button>
         </div>
 
-        {/* Client Name */}
-        <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <Label htmlFor="clientName" className="text-sm font-medium">
-            Имя клиента
-          </Label>
-          <Input
-            id="clientName"
-            type="text"
-            placeholder="Введите имя"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            className="input-beauty h-12"
-          />
+        {/* Client Selection */}
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+          <div className="flex items-center justify-between px-1">
+            <Label className="text-sm font-bold">Клиент</Label>
+            <div className="flex p-0.5 bg-secondary rounded-lg">
+              <button
+                type="button"
+                onClick={() => setClientSelectionMode('list')}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientSelectionMode === 'list'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Из списка
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientSelectionMode('manual')}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientSelectionMode === 'manual'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Новый
+              </button>
+            </div>
+          </div>
+
+          {clientSelectionMode === 'manual' ? (
+            <Input
+              id="clientName"
+              type="text"
+              placeholder="Введите имя клиента..."
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="input-beauty h-12"
+            />
+          ) : (
+            <div className="space-y-2 relative">
+              {!clientName && (
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                  <Input
+                    placeholder="Поиск в базе..."
+                    className="pl-10 h-12 rounded-2xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                    value={searchClientQuery}
+                    onChange={(e) => setSearchClientQuery(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {searchClientQuery && filteredClients.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card rounded-2xl shadow-xl border border-border/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 focus-within:ring-2">
+                  {filteredClients.map((client) => (
+                    <button
+                      key={client.id}
+                      type="button"
+                      onClick={() => {
+                        setClientName(client.name);
+                        setSearchClientQuery('');
+                        toast({
+                          title: 'Клиент выбран',
+                          description: client.name,
+                        });
+                      }}
+                      className="w-full flex items-center justify-between p-3 hover:bg-secondary/50 transition-colors border-b border-border/30 last:border-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                          <User size={16} />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm font-bold">{client.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{client.phone}</span>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {clientName && (
+                <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-2xl border border-primary/10 animate-in zoom-in-95 duration-200">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                    <User size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold leading-tight uppercase tracking-tighter text-primary/60">Выбран клиент</p>
+                    <p className="text-base font-black text-primary leading-tight">{clientName}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full hover:bg-primary/10 text-primary"
+                    onClick={() => {
+                      setClientName('');
+                      setSearchClientQuery('');
+                    }}
+                  >
+                    <X size={18} />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Start and End Time - Only for service transactions */}

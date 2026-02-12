@@ -31,7 +31,7 @@ interface Service {
     id: string;
     name: string;
     price: number;
-    duration: number; // in minutes
+    duration?: number; // in minutes
     category: string;
 }
 
@@ -72,7 +72,7 @@ export default function ServicesPage() {
             id: Math.random().toString(36).substr(2, 9),
             name: newService.name,
             price: Number(newService.price),
-            duration: Number(newService.duration) || 30,
+            duration: newService.duration ? Number(newService.duration) : undefined,
             category: newService.category
         };
 
@@ -138,10 +138,12 @@ export default function ServicesPage() {
                                             {service.name}
                                         </h3>
                                         <div className="flex items-center gap-3 mt-2">
-                                            <div className="flex items-center gap-1.5 text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-full text-xs font-medium">
-                                                <Clock size={12} className="text-primary/70" />
-                                                {service.duration} мин
-                                            </div>
+                                            {service.duration && (
+                                                <div className="flex items-center gap-1.5 text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-full text-xs font-medium">
+                                                    <Clock size={12} className="text-primary/70" />
+                                                    {service.duration} мин
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-1.5 text-primary bg-primary/10 px-2.5 py-1 rounded-full text-xs font-bold">
                                                 <Euro size={12} />
                                                 {service.price}
@@ -228,7 +230,9 @@ export default function ServicesPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="duration" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Длительность (мин)</Label>
+                                    <Label htmlFor="duration" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                                        Длительность <span className="lowercase font-normal opacity-70">(необязательно)</span>
+                                    </Label>
                                     <Input
                                         id="duration"
                                         type="number"

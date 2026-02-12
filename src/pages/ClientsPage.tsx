@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Users, Search, MoreVertical, Phone, Calendar, Euro, ChevronRight, User, Plus, MessageSquare, Trash2, History, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Users, Search, MoreVertical, Phone, Calendar, Euro, ChevronRight, User, Plus, MessageSquare, Trash2, History, ExternalLink, Download, Upload, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
     Dialog,
@@ -27,6 +28,7 @@ interface Client {
     id: string;
     name: string;
     phone: string;
+    description?: string;
     lastVisit: string;
     totalSpent: number;
     visitCount: number;
@@ -45,9 +47,26 @@ export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
+    const [newDescription, setNewDescription] = useState('');
+
+    // States for editing
+    const [editName, setEditName] = useState('');
+    const [editPhone, setEditPhone] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (selectedClient) {
+            setEditName(selectedClient.name);
+            setEditPhone(selectedClient.phone);
+            setEditDescription(selectedClient.description || '');
+            setIsEditMode(false);
+        }
+    }, [selectedClient]);
 
     useEffect(() => {
         const handleOpenCreate = () => setIsCreateOpen(true);
@@ -63,6 +82,7 @@ export default function ClientsPage() {
             id: Math.random().toString(36).substr(2, 9),
             name: newName,
             phone: newPhone,
+            description: newDescription,
             lastVisit: new Date().toISOString().split('T')[0],
             totalSpent: 0,
             visitCount: 0
@@ -72,6 +92,7 @@ export default function ClientsPage() {
         setIsCreateOpen(false);
         setNewName('');
         setNewPhone('');
+        setNewDescription('');
         toast.success('Клиент успешно создан');
     };
 
@@ -81,6 +102,108 @@ export default function ClientsPage() {
         setSelectedClient(null);
         setIsDeleteAlertOpen(false);
         toast.info('Клиент удален');
+    };
+
+    const handleUpdateClient = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedClient || !editName) return;
+
+        const updatedClients = clients.map(c =>
+            c.id === selectedClient.id
+                ? { ...c, name: editName, phone: editPhone, description: editDescription }
+                : c
+        );
+
+        setClients(updatedClients);
+        setSelectedClient({ ...selectedClient, name: editName, phone: editPhone, description: editDescription });
+        setIsEditMode(false);
+        toast.success('Данные обновлены');
+    };
+
+    const handleExport = () => {
+        const dataStr = JSON.stringify(clients, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+        const exportFileDefaultName = `clients_export_${new Date().toISOString().split('T')[0]}.json`;
+
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        toast.success('Экспорт завершен');
+    };
+
+    const parseVCF = (vcfText: string): Client[] => {
+        const vCards = vcfText.split('BEGIN:VCARD');
+        const imported: Client[] = [];
+
+        vCards.forEach(card => {
+            if (!card.trim()) return;
+
+            // Extract Full Name (FN)
+            const fnMatch = card.match(/^FN(?:;.*?)*:(.*)$/m);
+            const nameMatch = fnMatch ? fnMatch[1].trim() : '';
+
+            // Extract Telephone (TEL)
+            const telMatch = card.match(/^TEL(?:;.*?)*:(.*)$/m);
+            const phoneMatch = telMatch ? telMatch[1].trim().replace(/[^\d+]/g, '') : '';
+
+            // Extract Notes (NOTE)
+            const noteMatch = card.match(/^NOTE(?:;.*?)*:(.*)$/m);
+            const descriptionMatch = noteMatch ? noteMatch[1].trim() : '';
+
+            if (nameMatch) {
+                imported.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: nameMatch,
+                    phone: phoneMatch,
+                    description: descriptionMatch,
+                    lastVisit: new Date().toISOString().split('T')[0],
+                    totalSpent: 0,
+                    visitCount: 0
+                });
+            }
+        });
+
+        return imported;
+    };
+
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const isVCF = file.name.toLowerCase().endsWith('.vcf');
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+            const content = event.target?.result as string;
+            try {
+                if (isVCF) {
+                    const imported = parseVCF(content);
+                    if (imported.length > 0) {
+                        setClients(prev => [...imported, ...prev]);
+                        toast.success(`Импортировано ${imported.length} контактов из VCF`);
+                    } else {
+                        toast.error('Контакты в файле не найдены');
+                    }
+                } else {
+                    const importedClients = JSON.parse(content);
+                    if (Array.isArray(importedClients)) {
+                        const isValid = importedClients.every(c => c.name && typeof c.name === 'string');
+                        if (isValid) {
+                            setClients(importedClients);
+                            toast.success(`Импортировано ${importedClients.length} клиентов`);
+                        } else {
+                            toast.error('Неверный формат файла');
+                        }
+                    }
+                }
+            } catch (error) {
+                toast.error('Ошибка при чтении файла');
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
     };
 
     const filteredClients = clients.filter(client =>
@@ -95,10 +218,44 @@ export default function ClientsPage() {
             {/* Header Container */}
             <div className="px-5 mb-6">
                 <div className="flex flex-col gap-4">
-                    <h1 className="text-2xl font-black flex items-center gap-2">
-                        <Users className="text-primary" size={24} />
-                        Клиенты
-                    </h1>
+                    <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-black flex items-center gap-2">
+                                <Users className="text-primary" size={24} />
+                                Клиенты
+                            </h1>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">
+                                Всего: {clients.length}
+                            </span>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="rounded-xl h-9 px-3 border-border/50 bg-card/50 hover:bg-primary/10 hover:text-primary transition-all text-xs font-bold gap-2"
+                            >
+                                <Download size={14} />
+                                Импорт
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleExport}
+                                className="rounded-xl h-9 px-3 border-border/50 bg-card/50 hover:bg-primary/10 hover:text-primary transition-all text-xs font-bold gap-2"
+                            >
+                                <Upload size={14} />
+                                Экспорт
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".json,.vcf"
+                                onChange={handleImport}
+                            />
+                        </div>
+                    </div>
 
                     {/* Search Bar */}
                     <div className="relative group">
@@ -142,8 +299,8 @@ export default function ClientsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                                        <MoreVertical size={18} />
+                                    <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
+                                        <ChevronRight size={18} />
                                     </div>
                                 </div>
 
@@ -207,6 +364,16 @@ export default function ClientsPage() {
                                     onChange={(e) => setNewPhone(e.target.value)}
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="description" className="text-sm font-bold ml-1">Описание (заметки)</Label>
+                                <Textarea
+                                    id="description"
+                                    placeholder="Например: аллергия на лак, предпочитает кофе..."
+                                    className="input-beauty min-h-[100px] py-3 rounded-2xl resize-none"
+                                    value={newDescription}
+                                    onChange={(e) => setNewDescription(e.target.value)}
+                                />
+                            </div>
                         </div>
                         <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
                             <Button
@@ -229,65 +396,150 @@ export default function ClientsPage() {
             </Dialog>
 
             {/* Client Details Dialog */}
-            <Dialog open={!!selectedClient} onOpenChange={(open) => !open && setSelectedClient(null)}>
+            <Dialog open={!!selectedClient} onOpenChange={(open) => {
+                if (!open) {
+                    setSelectedClient(null);
+                    setIsEditMode(false);
+                }
+            }}>
                 <DialogContent className="rounded-3xl border-none shadow-2xl bg-background/95 backdrop-blur-xl sm:max-w-[425px]">
                     {selectedClient && (
                         <>
                             <DialogHeader>
-                                <DialogTitle className="text-xl font-black flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <User size={20} />
+                                <div className="flex justify-between items-start pr-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                            <User size={24} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <DialogTitle className="text-xl font-black">
+                                                {isEditMode ? 'Редактирование' : selectedClient.name}
+                                            </DialogTitle>
+                                            {!isEditMode && (
+                                                <span className="text-sm font-bold text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                                    <Phone size={14} className="text-primary/70" />
+                                                    {selectedClient.phone}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    {selectedClient.name}
-                                </DialogTitle>
+                                </div>
                             </DialogHeader>
 
-                            <div className="space-y-6 pt-4">
-                                {/* Quick Stats */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-secondary/30 p-4 rounded-3xl flex flex-col gap-1 items-center justify-center text-center">
-                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Посетил(а)</span>
-                                        <span className="text-xl font-black">{selectedClient.visitCount} раз</span>
+                            {isEditMode ? (
+                                <form onSubmit={handleUpdateClient} className="space-y-5 pt-4">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-name" className="text-sm font-bold ml-1">Имя</Label>
+                                            <Input
+                                                id="edit-name"
+                                                className="input-beauty h-12"
+                                                value={editName}
+                                                onChange={(e) => setEditName(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-phone" className="text-sm font-bold ml-1">Телефон</Label>
+                                            <Input
+                                                id="edit-phone"
+                                                className="input-beauty h-12"
+                                                value={editPhone}
+                                                onChange={(e) => setEditPhone(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-description" className="text-sm font-bold ml-1">Описание</Label>
+                                            <Textarea
+                                                id="edit-description"
+                                                className="input-beauty min-h-[100px] py-3 rounded-2xl resize-none"
+                                                value={editDescription}
+                                                onChange={(e) => setEditDescription(e.target.value)}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="bg-primary/5 p-4 rounded-3xl flex flex-col gap-1 items-center justify-center text-center">
-                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Всего принес(ла)</span>
-                                        <span className="text-xl font-black text-primary">{selectedClient.totalSpent}€</span>
-                                    </div>
-                                </div>
-
-                                {/* Actions Group */}
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Связаться</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Button className="h-16 rounded-3xl flex flex-col gap-1 bg-[#25D366] hover:bg-[#128C7E] text-white border-none shadow-lg shadow-green-500/20 group">
-                                            <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
-                                            <span className="text-xs font-bold leading-none">WhatsApp</span>
-                                        </Button>
-                                        <Button className="h-16 rounded-3xl flex flex-col gap-1 bg-primary hover:bg-primary/90 text-primary-foreground border-none shadow-lg shadow-primary/20 group">
-                                            <Phone size={20} className="group-hover:scale-110 transition-transform" />
-                                            <span className="text-xs font-bold leading-none">Позвонить</span>
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Больше</p>
-                                    <div className="flex flex-col gap-2">
-                                        <Button variant="secondary" className="w-full h-12 rounded-2xl justify-start px-6 gap-3 font-bold group">
-                                            <History size={18} className="text-primary group-hover:scale-110 transition-transform" />
-                                            История посещений
+                                    <div className="grid grid-cols-2 gap-3 mt-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => setIsEditMode(false)}
+                                            className="rounded-2xl h-12 font-bold"
+                                        >
+                                            Отмена
                                         </Button>
                                         <Button
-                                            variant="ghost"
-                                            className="w-full h-12 rounded-2xl justify-start px-6 gap-3 font-bold text-destructive hover:text-destructive hover:bg-destructive/10 group"
-                                            onClick={() => setIsDeleteAlertOpen(true)}
+                                            type="submit"
+                                            className="rounded-2xl h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
                                         >
-                                            <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
-                                            Удалить клиента
+                                            Сохранить
                                         </Button>
                                     </div>
+                                </form>
+                            ) : (
+                                <div className="space-y-6 pt-4 h-full overflow-y-auto pr-1 -mr-1">
+                                    {selectedClient.description && (
+                                        <div className="bg-secondary/20 p-4 rounded-3xl border border-border/50">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Заметка</p>
+                                            <p className="text-sm font-medium leading-relaxed italic text-foreground/80">
+                                                "{selectedClient.description}"
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Quick Stats */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-secondary/30 p-4 rounded-3xl flex flex-col gap-1 items-center justify-center text-center">
+                                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Посетил(а)</span>
+                                            <span className="text-xl font-black">{selectedClient.visitCount} раз</span>
+                                        </div>
+                                        <div className="bg-primary/5 p-4 rounded-3xl flex flex-col gap-1 items-center justify-center text-center">
+                                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Всего принес(ла)</span>
+                                            <span className="text-xl font-black text-primary">{selectedClient.totalSpent}€</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions Group */}
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Связаться</p>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button className="h-16 rounded-3xl flex flex-col gap-1 bg-[#25D366] hover:bg-[#128C7E] text-white border-none shadow-lg shadow-green-500/20 group">
+                                                <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-xs font-bold leading-none">WhatsApp</span>
+                                            </Button>
+                                            <Button className="h-16 rounded-3xl flex flex-col gap-1 bg-primary hover:bg-primary/90 text-primary-foreground border-none shadow-lg shadow-primary/20 group" onClick={() => window.location.href = `tel:${selectedClient.phone}`}>
+                                                <Phone size={20} className="group-hover:scale-110 transition-transform" />
+                                                <span className="text-xs font-bold leading-none">Позвонить</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Больше</p>
+                                        <div className="flex flex-col gap-2">
+                                            <Button
+                                                variant="secondary"
+                                                className="w-full h-12 rounded-2xl justify-start px-6 gap-3 font-bold group"
+                                                onClick={() => setIsEditMode(true)}
+                                            >
+                                                <Pencil size={18} className="text-primary group-hover:scale-110 transition-transform" />
+                                                Изменить данные
+                                            </Button>
+                                            <Button variant="secondary" className="w-full h-12 rounded-2xl justify-start px-6 gap-3 font-bold group">
+                                                <History size={18} className="text-primary group-hover:scale-110 transition-transform" />
+                                                История посещений
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                className="w-full h-12 rounded-2xl justify-start px-6 gap-3 font-bold text-destructive hover:text-destructive hover:bg-destructive/10 group"
+                                                onClick={() => setIsDeleteAlertOpen(true)}
+                                            >
+                                                <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
+                                                Удалить клиента
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </>
                     )}
                 </DialogContent>

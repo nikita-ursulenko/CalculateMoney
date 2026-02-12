@@ -1,4 +1,5 @@
 import { Trash2, CreditCard, Euro, TriangleAlert, Handshake } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Entry } from '@/hooks/useEntries';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,12 +67,17 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
     .split(',')
     .map(s => serviceLabels[s.trim()] || s);
 
+  const navigate = useNavigate();
+
   return (
     <div className="entry-card animate-fade-in py-2 px-3">
       <div className="flex items-center gap-3">
 
         {/* Left: Info */}
-        <div className="flex-1 flex items-center gap-3 cursor-pointer overflow-hidden" onClick={onClick}>
+        <div
+          className="flex-1 flex items-center gap-3 cursor-pointer overflow-hidden"
+          onClick={onClick || (() => navigate(`/add/${entry.id}`))}
+        >
           {/* Icon */}
           <div className={`shrink-0 p-2 rounded-full ${isDebt
             ? 'bg-purple-100 text-purple-600'

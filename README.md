@@ -1,5 +1,4 @@
 # 💰 Calculate Money
-
 <div align="center">
   <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap; margin: 10px 0;">
     <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React"></a>

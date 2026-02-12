@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { ru } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Minus, Maximize, Edit2, X, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Minus, Maximize, Edit2, X, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from '@/lib/utils';
+import { MasterSelector } from '@/components/MasterSelector';
 
 interface Appointment {
     id: string;
@@ -34,7 +35,14 @@ interface Appointment {
     price: number;
     tips?: number;
     recipient_role?: 'me' | 'master' | 'admin';
+    masterId: string;
 }
+
+const MOCK_MASTERS = [
+    { user_id: 'm1', master_name: 'Анна Маникюр', rate_general: 40, rate_cash: 40, rate_card: 40, use_different_rates: false },
+    { user_id: 'm2', master_name: 'Ольга Педикюр', rate_general: 50, rate_cash: 50, rate_card: 50, use_different_rates: false },
+    { user_id: 'm3', master_name: 'Елена Визаж', rate_general: 45, rate_cash: 45, rate_card: 45, use_different_rates: false },
+];
 
 const MOCK_APPOINTMENTS: Appointment[] = [
     {
@@ -49,7 +57,8 @@ const MOCK_APPOINTMENTS: Appointment[] = [
         payment_method: 'card',
         price: 50,
         tips: 5,
-        recipient_role: 'me'
+        recipient_role: 'me',
+        masterId: 'm1'
     },
     {
         id: '2',
@@ -62,7 +71,8 @@ const MOCK_APPOINTMENTS: Appointment[] = [
         transaction_type: 'service',
         payment_method: 'cash',
         price: 40,
-        recipient_role: 'master'
+        recipient_role: 'master',
+        masterId: 'm2'
     },
     {
         id: '3',
@@ -73,7 +83,8 @@ const MOCK_APPOINTMENTS: Appointment[] = [
         end_time: '16:30',
         durationMinutes: 30,
         transaction_type: 'debt_salon_to_master',
-        price: 30
+        price: 30,
+        masterId: 'm1'
     },
     {
         id: '4',
@@ -86,17 +97,19 @@ const MOCK_APPOINTMENTS: Appointment[] = [
         transaction_type: 'service',
         payment_method: 'card',
         price: 25,
-        recipient_role: 'admin'
+        recipient_role: 'admin',
+        masterId: 'm3'
     },
 ];
 
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
 const BASE_HOUR_HEIGHT = 80;
 
-export default function CalendarPage() {
+export default function AdminCalendar() {
     const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [zoom, setZoom] = useState(1.0);
+    const [selectedMasterId, setSelectedMasterId] = useState<string>('m1');
 
     // Pinch to zoom state
     const touchStartRef = useRef<{ dist: number; zoom: number } | null>(null);
@@ -112,7 +125,10 @@ export default function CalendarPage() {
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     const getDayAppointments = (date: Date) => {
-        return MOCK_APPOINTMENTS.filter(app => isSameDay(new Date(app.startTime), date));
+        return MOCK_APPOINTMENTS.filter(app =>
+            isSameDay(new Date(app.startTime), date) &&
+            app.masterId === selectedMasterId
+        );
     };
 
     const calculatePosition = (startTime: string, duration: number) => {
@@ -165,34 +181,42 @@ export default function CalendarPage() {
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <h1 className="text-lg font-bold flex items-center gap-2">
-                                <CalendarIcon className="text-primary" size={20} />
-                                Расписание на неделю
+                                <Shield className="text-primary" size={20} />
+                                Календарь мастеров
                             </h1>
                         </div>
 
-                        <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-1 shadow-sm">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDate(-1)}>
-                                <ChevronLeft size={18} />
-                            </Button>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" className="text-sm font-medium h-auto py-1 px-4 hover:bg-primary/5 transition-colors">
-                                        {`${format(weekStart, 'd MMM')} - ${format(weekDays[6], 'd MMM, yyyy', { locale: ru })}`}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="center">
-                                    <Calendar
-                                        mode="single"
-                                        selected={currentDate}
-                                        onSelect={(date) => date && setCurrentDate(date)}
-                                        initialFocus
-                                        locale={ru}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDate(1)}>
-                                <ChevronRight size={18} />
-                            </Button>
+                        <div className="flex flex-col gap-2">
+                            <MasterSelector
+                                masters={MOCK_MASTERS}
+                                selectedMasterId={selectedMasterId}
+                                onSelectMaster={setSelectedMasterId}
+                            />
+
+                            <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-1 shadow-sm">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDate(-1)}>
+                                    <ChevronLeft size={18} />
+                                </Button>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" className="text-sm font-medium h-auto py-1 px-4 hover:bg-primary/5 transition-colors">
+                                            {`${format(weekStart, 'd MMM')} - ${format(weekDays[6], 'd MMM, yyyy', { locale: ru })}`}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="center">
+                                        <Calendar
+                                            mode="single"
+                                            selected={currentDate}
+                                            onSelect={(date) => date && setCurrentDate(date)}
+                                            initialFocus
+                                            locale={ru}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDate(1)}>
+                                    <ChevronRight size={18} />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -218,7 +242,7 @@ export default function CalendarPage() {
                                     "flex-1 text-center flex flex-col justify-center border-r border-slate-300 last:border-r-0 min-w-0 transition-colors cursor-pointer hover:bg-primary/10 active:bg-primary/20",
                                     isSameDay(date, new Date()) && "bg-primary/5"
                                 )}
-                                onClick={() => navigate(`/add?date=${format(date, 'yyyy-MM-dd')}`)}
+                                onClick={() => navigate(`/admin/add?date=${format(date, 'yyyy-MM-dd')}`)}
                             >
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{format(date, 'eee', { locale: ru })}</p>
                                 <p className={cn(
@@ -406,7 +430,7 @@ export default function CalendarPage() {
                                                         <div className="p-6 pt-0 flex gap-3">
                                                             <Button
                                                                 className="flex-1 h-12 rounded-2xl btn-primary-gradient font-bold shadow-lg shadow-primary/20"
-                                                                onClick={() => navigate(`/add/${app.id}`)}
+                                                                onClick={() => navigate(`/admin/edit/${app.id}`)}
                                                             >
                                                                 <Edit2 size={18} className="mr-2" />
                                                                 Изменить

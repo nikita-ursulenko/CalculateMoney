@@ -11,6 +11,7 @@ import AddEntry from "./pages/AddEntry";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAddEntry from "./pages/AdminAddEntry";
+import AdminCalendar from "@/pages/AdminCalendar";
 import CalendarPage from "./pages/CalendarPage";
 import ServicesPage from "./pages/ServicesPage";
 import ClientsPage from "./pages/ClientsPage";
@@ -170,6 +171,16 @@ function AppRoutes() {
               <AdminRoute>
                 <PageWrapper custom={direction}>
                   <AdminAddEntry />
+                </PageWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/calendar"
+            element={
+              <AdminRoute>
+                <PageWrapper custom={direction}>
+                  <AdminCalendar />
                 </PageWrapper>
               </AdminRoute>
             }

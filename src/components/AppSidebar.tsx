@@ -34,7 +34,8 @@ export function AppSidebar() {
     ];
 
     const adminItems = [
-        { title: "Админка", icon: Shield, path: "/admin" },
+        { title: "Главная", icon: Shield, path: "/admin" },
+        { title: "Календарь", icon: Calendar, path: "/admin/calendar" },
     ];
 
     return (
@@ -84,10 +85,10 @@ export function AppSidebar() {
                                 <SidebarMenuItem key={item.path}>
                                     <SidebarMenuButton
                                         onClick={() => handleNavigate(item.path)}
-                                        isActive={location.pathname.startsWith(item.path)}
+                                        isActive={location.pathname === item.path}
                                         className={cn(
                                             "rounded-xl h-11 px-4 transition-all duration-200",
-                                            location.pathname.startsWith(item.path)
+                                            location.pathname === item.path
                                                 ? "bg-primary/10 text-primary font-bold shadow-sm"
                                                 : "hover:bg-primary/5 text-muted-foreground hover:text-foreground"
                                         )}

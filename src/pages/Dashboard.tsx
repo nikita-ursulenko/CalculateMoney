@@ -7,7 +7,6 @@ import { CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, Loader2, Plus, Eye
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { BottomNav } from '@/components/BottomNav';
 import { EntryCard } from '@/components/EntryCard';
 import { ExportMenu } from '@/components/ExportMenu';
 import { useSettings } from '@/hooks/useSettings';
@@ -406,7 +405,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <BottomNav onAddClick={handleAddEntry} isAdmin={isAdmin} />
+
     </div >
   );
 }

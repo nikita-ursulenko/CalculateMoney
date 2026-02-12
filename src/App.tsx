@@ -11,8 +11,10 @@ import AddEntry from "./pages/AddEntry";
 import SettingsPage from "./pages/SettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAddEntry from "./pages/AdminAddEntry";
+import CalendarPage from "./pages/CalendarPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { SidebarLayout } from './components/SidebarLayout';
 
 const queryClient = new QueryClient();
 
@@ -86,92 +88,104 @@ function AppRoutes() {
   const direction = location.state?.direction || 'none';
 
   return (
-    <AnimatePresence mode="wait" custom={direction}>
-      <Routes location={location} key={location.pathname}>
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <PageWrapper>
-                <AuthPage />
-              </PageWrapper>
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <PageWrapper>
-                <Dashboard />
-              </PageWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add"
-          element={
-            <ProtectedRoute>
-              <PageWrapper>
-                <AddEntry />
-              </PageWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit/:id"
-          element={
-            <ProtectedRoute>
-              <PageWrapper>
-                <AddEntry />
-              </PageWrapper>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <PageWrapper>
-                <SettingsPage />
-              </PageWrapper>
-            </ProtectedRoute>
-          }
-        />
-        {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <PageWrapper>
-                <AdminDashboard />
-              </PageWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/add"
-          element={
-            <AdminRoute>
-              <PageWrapper>
-                <AdminAddEntry />
-              </PageWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/edit/:id"
-          element={
-            <AdminRoute>
-              <PageWrapper>
-                <AdminAddEntry />
-              </PageWrapper>
-            </AdminRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AnimatePresence>
+    <SidebarLayout>
+      <AnimatePresence mode="wait" custom={direction}>
+        <Routes location={location} key={location.pathname}>
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <PageWrapper custom={direction}>
+                  <AuthPage />
+                </PageWrapper>
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <Dashboard />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <AddEntry />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <AddEntry />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <SettingsPage />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <PageWrapper custom={direction}>
+                  <AdminDashboard />
+                </PageWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/add"
+            element={
+              <AdminRoute>
+                <PageWrapper custom={direction}>
+                  <AdminAddEntry />
+                </PageWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/edit/:id"
+            element={
+              <AdminRoute>
+                <PageWrapper custom={direction}>
+                  <AdminAddEntry />
+                </PageWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <PageWrapper custom={direction}>
+                  <CalendarPage />
+                </PageWrapper>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AnimatePresence>
+    </SidebarLayout>
   );
 }
 
@@ -181,7 +195,7 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AppRoutes />
         </BrowserRouter>
       </AuthProvider>

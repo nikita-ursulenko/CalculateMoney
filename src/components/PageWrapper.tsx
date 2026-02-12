@@ -4,10 +4,11 @@ import { useLocation } from 'react-router-dom';
 
 interface PageWrapperProps {
     children: ReactNode;
-    className?: string; // Allow passing className
+    className?: string;
+    custom?: any; // Add custom prop for Framer Motion
 }
 
-export function PageWrapper({ children, className }: PageWrapperProps) {
+export function PageWrapper({ children, className, custom }: PageWrapperProps) {
     const location = useLocation();
     const isAddEntry = location.pathname.includes('/add') || location.pathname.includes('/edit');
 
@@ -28,8 +29,10 @@ export function PageWrapper({ children, className }: PageWrapperProps) {
             opacity: 1,
             scale: 1,
             transition: {
-                duration: 0.3,
-                ease: "easeOut"
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                duration: 0.4
             }
         },
         exit: (direction: string) => {

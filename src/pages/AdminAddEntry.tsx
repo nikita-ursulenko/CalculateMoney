@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Loader2, ArrowLeft, Euro, CreditCard } from 'lucide-react';
+import { Loader2, ArrowLeft, Euro, CreditCard, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ServiceChips } from '@/components/ServiceChips';
 import { PaymentTabs } from '@/components/PaymentTabs';
-import { BottomNav } from '@/components/BottomNav';
 import { useAdminEntries } from '@/hooks/useAdminEntries';
 import { useMasters } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
@@ -117,20 +116,21 @@ export default function AdminAddEntry() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between px-5 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(`/admin?master=${masterId}`)}
-          >
-            <ArrowLeft size={20} />
-          </Button>
+          <div className="w-10" /> {/* Spacer */}
           <div className="text-center">
             <h1 className="text-lg font-semibold text-foreground">Новая запись</h1>
             <p className="text-xs text-muted-foreground">
               {selectedMaster?.master_name} • {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
             </p>
           </div>
-          <div className="w-10" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/admin?master=${masterId}`)}
+            className="rounded-full h-12 w-12 hover:bg-secondary/80"
+          >
+            <X size={28} className="text-muted-foreground" />
+          </Button>
         </div>
       </div>
 
@@ -142,8 +142,8 @@ export default function AdminAddEntry() {
             type="button"
             onClick={() => setTransactionType('service')}
             className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType === 'service'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
             Клиент
@@ -152,8 +152,8 @@ export default function AdminAddEntry() {
             type="button"
             onClick={() => setTransactionType('debt_salon_to_master')}
             className={`py-2 rounded-lg text-sm font-medium transition-all ${transactionType !== 'service'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
               }`}
           >
             Долг / Корректировка
@@ -221,8 +221,8 @@ export default function AdminAddEntry() {
                   type="button"
                   onClick={() => setTransactionType('debt_salon_to_master')}
                   className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_salon_to_master'
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   Салон мне
@@ -231,8 +231,8 @@ export default function AdminAddEntry() {
                   type="button"
                   onClick={() => setTransactionType('debt_master_to_salon')}
                   className={`flex-1 rounded-xl text-xs sm:text-xs font-medium leading-tight transition-all border-2 ${transactionType === 'debt_master_to_salon'
-                      ? 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-transparent bg-secondary text-muted-foreground hover:bg-secondary/80'
                     }`}
                 >
                   Я салону
@@ -307,7 +307,7 @@ export default function AdminAddEntry() {
         </Button>
       </div>
 
-      <BottomNav isAdmin />
+
     </div>
   );
 }

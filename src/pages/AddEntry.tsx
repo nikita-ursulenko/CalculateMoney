@@ -3,11 +3,10 @@ import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { ArrowLeft, Loader2, Euro, CreditCard } from 'lucide-react';
+import { ArrowLeft, Loader2, Euro, CreditCard, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BottomNav } from '@/components/BottomNav';
 import { ServiceChips } from '@/components/ServiceChips';
 import { PaymentTabs } from '@/components/PaymentTabs';
 import { useEntries } from '@/hooks/useEntries';
@@ -176,16 +175,25 @@ export default function AddEntry() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
-      <header className="px-5 pt-6 pb-4 flex items-center gap-4">
-
-        <div>
-          <h1 className="text-xl font-display font-bold text-foreground">
-            {id ? 'Редактировать' : 'Новая запись'}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
-          </p>
+      <header className="px-5 pt-6 pb-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-display font-bold text-foreground">
+              {id ? 'Редактировать' : 'Новая запись'}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
+            </p>
+          </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="rounded-full h-12 w-12 hover:bg-secondary/80"
+        >
+          <X size={28} className="text-muted-foreground" />
+        </Button>
       </header>
 
       <form onSubmit={handleSubmit} className="px-5 space-y-4 animate-slide-up">
@@ -414,7 +422,7 @@ export default function AddEntry() {
         </div>
       </form>
 
-      <BottomNav isAdmin={isAdmin} />
+
     </div>
   );
 }

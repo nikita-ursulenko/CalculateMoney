@@ -159,6 +159,12 @@ export default function AdminCalendar() {
                                             onSelect={(date) => date && setCurrentDate(date)}
                                             initialFocus
                                             locale={ru}
+                                            modifiers={{
+                                                week: weekDays
+                                            }}
+                                            modifiersClassNames={{
+                                                week: "bg-primary/20 text-primary rounded-none first:rounded-l-md last:rounded-r-md hover:bg-primary/30"
+                                            }}
                                         />
                                     </PopoverContent>
                                 </Popover>
@@ -189,14 +195,22 @@ export default function AdminCalendar() {
                                 key={idx}
                                 className={cn(
                                     "flex-1 text-center flex flex-col justify-center border-r border-slate-300 last:border-r-0 min-w-0 transition-colors cursor-pointer hover:bg-primary/10 active:bg-primary/20",
-                                    isSameDay(date, new Date()) && "bg-primary/5"
+                                    isSameDay(date, new Date()) && "bg-primary/5",
+                                    isSameDay(date, currentDate) && "bg-primary/20"
                                 )}
-                                onClick={() => navigate(`/admin/add?date=${format(date, 'yyyy-MM-dd')}&master=${selectedMasterId}`)}
+                                onClick={() => {
+                                    setCurrentDate(date);
+                                    navigate(`/admin/add?date=${format(date, 'yyyy-MM-dd')}&master=${selectedMasterId}`);
+                                }}
                             >
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{format(date, 'eee', { locale: ru })}</p>
+                                <p className={cn(
+                                    "text-[10px] text-muted-foreground uppercase tracking-wider",
+                                    isSameDay(date, currentDate) && "text-primary font-bold"
+                                )}>{format(date, 'eee', { locale: ru })}</p>
                                 <p className={cn(
                                     "text-base font-black leading-none mt-1",
-                                    isSameDay(date, new Date()) && "text-primary"
+                                    isSameDay(date, new Date()) && "text-primary",
+                                    isSameDay(date, currentDate) && "text-primary"
                                 )}>{format(date, 'd')}</p>
                             </div>
                         ))}

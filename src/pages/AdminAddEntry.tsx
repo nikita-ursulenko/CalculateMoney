@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Loader2, ArrowLeft, Euro, CreditCard, X, Search, User, ChevronRight } from 'lucide-react';
@@ -14,24 +14,28 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useClients } from '@/hooks/useClients';
 import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminAddEntry() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { masters } = useMasters();
   const { isAdmin } = useUserRole();
 
-  // Get master and date from URL
-  const masterId = searchParams.get('master');
-  const dateParam = searchParams.get('date');
-  const selectedDate = dateParam ? parseISO(dateParam) : new Date();
+  // Get master and date from URL or state
+  const [masterId, setMasterId] = useState<string | null>(searchParams.get('master'));
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    searchParams.get('date') ? parseISO(searchParams.get('date')!) : new Date()
+  );
+
   const selectedMaster = masters.find(m => m.user_id === masterId);
 
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
 
-  const { addEntry, loading, checkOverlap } = useAdminEntries(masterId, selectedDate);
+  const { addEntry, updateEntry, checkOverlap } = useAdminEntries(masterId, selectedDate);
 
   const [service, setService] = useState('');
   const [price, setPrice] = useState('');
@@ -41,6 +45,7 @@ export default function AdminAddEntry() {
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingEntry, setLoadingEntry] = useState(false); // Only for editing state
   const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
   const [clientSelectionMode, setClientSelectionMode] = useState<'manual' | 'list'>('list');
   const [searchClientQuery, setSearchClientQuery] = useState('');
@@ -51,6 +56,59 @@ export default function AdminAddEntry() {
     c.name.toLowerCase().includes(searchClientQuery.toLowerCase()) ||
     (c.phone && c.phone.includes(searchClientQuery))
   );
+
+  // Fetch entry data if in edit mode
+  useEffect(() => {
+    const fetchEntry = async () => {
+      if (!id) return;
+
+      setLoadingEntry(true);
+      try {
+        const { data, error } = await supabase
+          .from('entries')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setMasterId(data.user_id);
+          setSelectedDate(parseISO(data.date));
+          setTransactionType(data.transaction_type as any || 'service');
+
+          if (data.transaction_type === 'service') {
+            setService(data.service);
+            setPrice(data.price.toString());
+            setTips(data.tips?.toString() || '');
+            setPaymentMethod(data.payment_method as any);
+            setTipsPaymentMethod(data.tips_payment_method as any);
+            setStartTime(data.start_time || '10:00');
+            setEndTime(data.end_time || '11:00');
+            setClientName(data.client_name);
+            setClientId(data.client_id || null);
+          } else {
+            setService(data.service); // Description for debt
+            setPrice(data.price.toString());
+            // No client or time for debt usually, but better safe
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching entry:', error);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось загрузить данные записи',
+          variant: 'destructive',
+        });
+        navigate('/admin/calendar');
+      } finally {
+        setLoadingEntry(false);
+      }
+    };
+
+    fetchEntry();
+  }, [id, navigate, toast]);
+
 
   const handleSubmit = async () => {
     if (!service || !price || !masterId) {
@@ -63,7 +121,6 @@ export default function AdminAddEntry() {
         return;
       }
       if (transactionType === 'service' && (!service || !price || !masterId)) {
-        // Redundant check but keeps logic clear
         toast({
           title: 'Заполните поля',
           description: 'Услуга и стоимость обязательны',
@@ -92,8 +149,8 @@ export default function AdminAddEntry() {
       return;
     }
 
-    // Check for overlap
-    if (transactionType === 'service' && checkOverlap(format(selectedDate, 'yyyy-MM-dd'), startTime, endTime)) {
+    // Check for overlap (exclude current entry if editing)
+    if (transactionType === 'service' && checkOverlap(format(selectedDate, 'yyyy-MM-dd'), startTime, endTime, id)) {
       toast({
         title: 'Ошибка',
         description: 'Это время уже занято другой записью у этого мастера',
@@ -104,41 +161,56 @@ export default function AdminAddEntry() {
 
     setSubmitting(true);
 
-    const { error } = await addEntry(
-      {
-        service,
-        price: Number(price),
-        tips: Number(tips) || 0,
-        payment_method: transactionType === 'service'
-          ? (paymentMethod as 'cash' | 'card')
-          : (transactionType === 'debt_salon_to_master' ? 'card' : 'cash'),
-        transaction_type: transactionType,
-        tips_payment_method: tipsPaymentMethod,
-        client_name: clientName,
-        client_id: clientId,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        start_time: startTime,
-        end_time: endTime,
-      },
-      masterId
-    );
+    const entryData = {
+      service,
+      price: Number(price),
+      tips: Number(tips) || 0,
+      payment_method: transactionType === 'service'
+        ? (paymentMethod as 'cash' | 'card')
+        : (transactionType === 'debt_salon_to_master' ? 'card' : 'cash'),
+      transaction_type: transactionType,
+      tips_payment_method: tipsPaymentMethod,
+      client_name: clientName,
+      client_id: clientId,
+      date: format(selectedDate, 'yyyy-MM-dd'),
+      start_time: startTime,
+      end_time: endTime,
+      user_id: masterId, // Ensure user_id is set/updated
+    };
+
+    let error;
+    if (id) {
+      const result = await updateEntry(id, entryData);
+      error = result.error;
+    } else {
+      const result = await addEntry(entryData, masterId);
+      error = result.error;
+    }
 
     setSubmitting(false);
 
     if (error) {
       toast({
         title: 'Ошибка',
-        description: 'Не удалось добавить запись',
+        description: id ? 'Не удалось обновить запись' : 'Не удалось добавить запись',
         variant: 'destructive',
       });
     } else {
       toast({
         title: 'Готово',
-        description: 'Запись добавлена',
+        description: id ? 'Запись обновлена' : 'Запись добавлена',
       });
-      navigate(`/admin?master=${masterId}&from=${format(selectedDate, 'yyyy-MM-dd')}`);
+      navigate(`/admin/calendar?master=${masterId}&date=${format(selectedDate, 'yyyy-MM-dd')}`);
     }
   };
+
+  if (loadingEntry) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -147,7 +219,9 @@ export default function AdminAddEntry() {
         <div className="flex items-center justify-between px-5 py-4">
           <div className="w-10" /> {/* Spacer */}
           <div className="text-center">
-            <h1 className="text-lg font-semibold text-foreground">Новая запись</h1>
+            <h1 className="text-lg font-semibold text-foreground">
+              {id ? 'Редактировать запись' : 'Новая запись'}
+            </h1>
             <p className="text-xs text-muted-foreground">
               {selectedMaster?.master_name} • {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
             </p>
@@ -155,7 +229,7 @@ export default function AdminAddEntry() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(`/admin?master=${masterId}`)}
+            onClick={() => navigate(`/admin/calendar?master=${masterId}`)}
             className="rounded-full h-12 w-12 hover:bg-secondary/80"
           >
             <X size={28} className="text-muted-foreground" />
@@ -460,7 +534,7 @@ export default function AdminAddEntry() {
           {submitting ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            'Добавить запись'
+            id ? 'Сохранить изменения' : 'Добавить запись'
           )}
         </Button>
       </div>

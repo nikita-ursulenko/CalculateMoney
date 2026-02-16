@@ -11,6 +11,8 @@ interface SidebarLayoutProps {
     children: React.ReactNode;
 }
 
+import { SidebarSwipeGesture } from "./SidebarSwipeGesture";
+
 export function SidebarLayout({ children }: SidebarLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
@@ -28,6 +30,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
 
     return (
         <SidebarProvider>
+            <SidebarSwipeGesture />
             <div className="flex min-h-screen w-full bg-background">
                 <AppSidebar />
                 <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">

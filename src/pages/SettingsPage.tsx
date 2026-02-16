@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Loader2, Save, TrendingUp } from 'lucide-react';
+import { ArrowLeft, LogOut, Loader2, Save, TrendingUp, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useProfessions } from '@/hooks/useProfessions';
 
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -17,9 +25,11 @@ export default function SettingsPage() {
   const { signOut } = useAuth();
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
+  const { professions, addProfession, deleteProfession } = useProfessions();
 
   const [masterName, setMasterName] = useState('');
   const [masterProfession, setMasterProfession] = useState('');
+  const [newProfession, setNewProfession] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -28,6 +38,25 @@ export default function SettingsPage() {
       setMasterProfession(settings.master_profession || '');
     }
   }, [settings]);
+
+  const handleAddProfession = async () => {
+    if (!newProfession.trim()) return;
+
+    await addProfession(newProfession.trim());
+    setNewProfession('');
+    toast({
+      title: 'Успешно',
+      description: 'Профессия добавлена',
+    });
+  };
+
+  const handleDeleteProfession = async (id: string) => {
+    await deleteProfession(id);
+    toast({
+      title: 'Успешно',
+      description: 'Профессия удалена',
+    });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -99,20 +128,68 @@ export default function SettingsPage() {
           />
         </div>
 
-        {/* Master Profession */}
+        {/* Master Profession Selection */}
         <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Label htmlFor="masterProfession" className="text-sm font-medium">
             Профессия / Специализация
           </Label>
-          <Input
-            id="masterProfession"
-            type="text"
-            placeholder="Например: Мастер маникюра"
-            value={masterProfession}
-            onChange={(e) => setMasterProfession(e.target.value)}
-            className="input-beauty h-12"
-          />
+          <Select value={masterProfession} onValueChange={setMasterProfession}>
+            <SelectTrigger className="w-full h-12 input-beauty">
+              <SelectValue placeholder="Выберите специализацию" />
+            </SelectTrigger>
+            <SelectContent>
+              {professions.map((prof) => (
+                <SelectItem key={prof.id} value={prof.name}>
+                  {prof.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Admin Section: Manage Professions */}
+        {isAdmin && (
+          <div className="pt-4 border-t border-border/50 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+              <TrendingUp size={14} />
+              Справочник профессий
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Новая профессия..."
+                  className="h-10 text-sm"
+                  value={newProfession}
+                  onChange={(e) => setNewProfession(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddProfession()}
+                />
+                <Button
+                  size="sm"
+                  className="h-10 px-4"
+                  onClick={handleAddProfession}
+                  disabled={!newProfession.trim()}
+                >
+                  <Plus size={18} />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {professions.map((prof) => (
+                  <div key={prof.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50 border border-border/50 text-xs font-medium">
+                    <span>{prof.name}</span>
+                    <button
+                      onClick={() => handleDeleteProfession(prof.id)}
+                      className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Save Button */}
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>

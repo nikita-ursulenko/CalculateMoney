@@ -6,6 +6,7 @@ import { useUserRole } from './useUserRole';
 export interface Master {
   user_id: string;
   master_name: string;
+  master_profession?: string;
   rate_general: number;
   rate_cash: number;
   rate_card: number;
@@ -28,9 +29,10 @@ export function useMasters() {
 
       try {
         // Admin can see all settings (contains master info)
+        // @ts-ignore
         const { data, error } = await supabase
           .from('settings')
-          .select('user_id, master_name, rate_general, rate_cash, rate_card, use_different_rates')
+          .select('user_id, master_name, master_profession, rate_general, rate_cash, rate_card, use_different_rates')
           .order('master_name', { ascending: true });
 
         if (error) throw error;
@@ -41,6 +43,7 @@ export function useMasters() {
         setMasters(filteredData.map(s => ({
           user_id: s.user_id,
           master_name: s.master_name || 'Без имени',
+          master_profession: s.master_profession || '',
           rate_general: Number(s.rate_general),
           rate_cash: Number(s.rate_cash),
           rate_card: Number(s.rate_card),

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { ru } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Minus, Maximize, Edit2, X, User, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Plus, Minus, Maximize, Edit2, X, User, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -22,118 +22,60 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from '@/lib/utils';
 import { MasterSelector } from '@/components/MasterSelector';
 
-interface Appointment {
-    id: string;
-    clientName: string;
-    service: string;
-    startTime: string; // ISO date for position on calendar
-    start_time: string; // HH:mm for display
-    end_time: string; // HH:mm for display
-    durationMinutes: number;
-    transaction_type: 'service' | 'debt_salon_to_master' | 'debt_master_to_salon';
-    payment_method?: 'cash' | 'card';
-    price: number;
-    tips?: number;
-    recipient_role?: 'me' | 'master' | 'admin';
-    masterId: string;
-}
-
-const MOCK_MASTERS = [
-    { user_id: 'm1', master_name: 'Анна Маникюр', rate_general: 40, rate_cash: 40, rate_card: 40, use_different_rates: false },
-    { user_id: 'm2', master_name: 'Ольга Педикюр', rate_general: 50, rate_cash: 50, rate_card: 50, use_different_rates: false },
-    { user_id: 'm3', master_name: 'Елена Визаж', rate_general: 45, rate_cash: 45, rate_card: 45, use_different_rates: false },
-];
-
-const MOCK_APPOINTMENTS: Appointment[] = [
-    {
-        id: '1',
-        clientName: 'Анна Петрова',
-        service: 'Маникюр + Покрытие',
-        startTime: '2026-02-12T10:00:00',
-        start_time: '10:00',
-        end_time: '11:30',
-        durationMinutes: 90,
-        transaction_type: 'service',
-        payment_method: 'card',
-        price: 50,
-        tips: 5,
-        recipient_role: 'me',
-        masterId: 'm1'
-    },
-    {
-        id: '2',
-        clientName: 'Мария Иванова',
-        service: 'Педикюр',
-        startTime: '2026-02-12T14:00:00',
-        start_time: '14:00',
-        end_time: '15:00',
-        durationMinutes: 60,
-        transaction_type: 'service',
-        payment_method: 'cash',
-        price: 40,
-        recipient_role: 'master',
-        masterId: 'm2'
-    },
-    {
-        id: '3',
-        clientName: 'Салон',
-        service: 'Ресницы для админа',
-        startTime: '2026-02-12T16:00:00',
-        start_time: '16:00',
-        end_time: '16:30',
-        durationMinutes: 30,
-        transaction_type: 'debt_salon_to_master',
-        price: 30,
-        masterId: 'm1'
-    },
-    {
-        id: '4',
-        clientName: 'Елена Сидорова',
-        service: 'Снятие + Уход',
-        startTime: '2026-02-13T12:00:00',
-        start_time: '12:00',
-        end_time: '12:45',
-        durationMinutes: 45,
-        transaction_type: 'service',
-        payment_method: 'card',
-        price: 25,
-        recipient_role: 'admin',
-        masterId: 'm3'
-    },
-];
+import { useMasters } from '@/hooks/useMasters';
+import { useAdminEntries } from '@/hooks/useAdminEntries';
+import { useAuth } from '@/hooks/useAuth';
 
 const HOURS = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
 const BASE_HOUR_HEIGHT = 80;
 
 export default function AdminCalendar() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const { masters, loading: mastersLoading } = useMasters();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [zoom, setZoom] = useState(1.0);
-    const [selectedMasterId, setSelectedMasterId] = useState<string>('m1');
+    const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
+
+    // Set initial master once loaded
+    useEffect(() => {
+        if (masters.length > 0 && !selectedMasterId) {
+            setSelectedMasterId(masters[0].user_id);
+        }
+    }, [masters, selectedMasterId]);
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const weekEnd = addDays(weekStart, 6);
+
+    const { entries, loading: entriesLoading } = useAdminEntries(
+        selectedMasterId,
+        { from: weekStart, to: weekEnd }
+    );
 
     // Pinch to zoom state
     const touchStartRef = useRef<{ dist: number; zoom: number } | null>(null);
     const hourHeight = BASE_HOUR_HEIGHT * zoom;
 
-    const navigateDate = (amount: number) => {
-        const nextDate = new Date(currentDate);
-        nextDate.setDate(currentDate.getDate() + amount * 7);
-        setCurrentDate(nextDate);
-    };
-
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
     const getDayAppointments = (date: Date) => {
-        return MOCK_APPOINTMENTS.filter(app =>
-            isSameDay(new Date(app.startTime), date) &&
-            app.masterId === selectedMasterId
+        return entries.filter(app =>
+            isSameDay(new Date(app.date), date)
         );
     };
 
-    const calculatePosition = (startTime: string, duration: number) => {
-        const start = new Date(startTime);
-        const startMinutes = (start.getHours() - 8) * 60 + start.getMinutes();
+    const calculatePosition = (startTime?: string, endTime?: string) => {
+        if (!startTime || !endTime) return { top: '0px', height: '0px' };
+
+        const toMinutes = (time: string) => {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const start = toMinutes(startTime);
+        const end = toMinutes(endTime);
+        const duration = end - start;
+
+        const startMinutes = start - 8 * 60; // 8:00 offset
         const top = (startMinutes / 60) * hourHeight;
         const height = (duration / 60) * hourHeight;
         return { top: `${top}px`, height: `${height}px` };
@@ -172,6 +114,12 @@ export default function AdminCalendar() {
         setZoom(prev => Math.min(Math.max(prev + delta, 0.5), 3.0));
     };
 
+    const navigateDate = (amount: number) => {
+        const nextDate = new Date(currentDate);
+        nextDate.setDate(currentDate.getDate() + amount * 7);
+        setCurrentDate(nextDate);
+    };
+
     return (
         <div className="h-screen flex flex-col bg-background">
             {/* Main Scrollable Area (Vertical & Horizontal) */}
@@ -183,13 +131,14 @@ export default function AdminCalendar() {
                             <h1 className="text-lg font-bold flex items-center gap-2">
                                 <Shield className="text-primary" size={20} />
                                 Календарь мастеров
+                                {(mastersLoading || entriesLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-2" />}
                             </h1>
                         </div>
 
                         <div className="flex flex-col gap-2">
                             <MasterSelector
-                                masters={MOCK_MASTERS}
-                                selectedMasterId={selectedMasterId}
+                                masters={masters}
+                                selectedMasterId={selectedMasterId || ''}
                                 onSelectMaster={setSelectedMasterId}
                             />
 
@@ -235,14 +184,14 @@ export default function AdminCalendar() {
                             <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-tighter text-right leading-none">Время</span>
                         </div>
 
-                        {appointmentsToRender.map(({ date }, idx) => (
+                        {weekDays.map((date, idx) => (
                             <div
                                 key={idx}
                                 className={cn(
                                     "flex-1 text-center flex flex-col justify-center border-r border-slate-300 last:border-r-0 min-w-0 transition-colors cursor-pointer hover:bg-primary/10 active:bg-primary/20",
                                     isSameDay(date, new Date()) && "bg-primary/5"
                                 )}
-                                onClick={() => navigate(`/admin/add?date=${format(date, 'yyyy-MM-dd')}`)}
+                                onClick={() => navigate(`/admin/add?date=${format(date, 'yyyy-MM-dd')}&master=${selectedMasterId}`)}
                             >
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{format(date, 'eee', { locale: ru })}</p>
                                 <p className={cn(
@@ -318,7 +267,7 @@ export default function AdminCalendar() {
                                         className="flex-1 relative h-full"
                                     >
                                         {apps.map((app) => {
-                                            const { top, height } = calculatePosition(app.startTime, app.durationMinutes);
+                                            const { top, height } = calculatePosition(app.start_time, app.end_time);
                                             return (
                                                 <Dialog key={app.id}>
                                                     <DialogTrigger asChild>
@@ -338,7 +287,7 @@ export default function AdminCalendar() {
                                                                     "text-[10px] font-black truncate leading-tight uppercase tracking-tight",
                                                                     app.transaction_type === 'service' ? "text-primary" : app.transaction_type === 'debt_salon_to_master' ? "text-green-700" : "text-red-700"
                                                                 )}>
-                                                                    {app.clientName}
+                                                                    {app.client_name}
                                                                 </p>
                                                                 <span className="text-[9px] font-bold opacity-60 shrink-0">{app.price}€</span>
                                                             </div>
@@ -369,7 +318,7 @@ export default function AdminCalendar() {
                                                                         <User size={24} />
                                                                     </div>
                                                                     <div>
-                                                                        <DialogTitle className="text-xl font-black">{app.clientName}</DialogTitle>
+                                                                        <DialogTitle className="text-xl font-black">{app.client_name}</DialogTitle>
                                                                         <p className="text-xs font-bold opacity-60 uppercase tracking-widest">
                                                                             {app.transaction_type === 'service' ? 'Услуга' : 'Доп. оплата'}
                                                                         </p>
@@ -388,7 +337,7 @@ export default function AdminCalendar() {
                                                             <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground">
                                                                 <div className="flex items-center gap-1.5">
                                                                     <CalendarIcon size={14} className="text-primary/60" />
-                                                                    {format(new Date(app.startTime), 'd MMMM', { locale: ru })}
+                                                                    {format(new Date(app.date), 'd MMMM', { locale: ru })}
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5">
                                                                     <Clock size={14} className="text-primary/60" />

@@ -1,45 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Check } from 'lucide-react';
-
-interface Service {
-  id: string;
-  name: string;
-  price: number;
-  duration: number;
-  category: string;
-}
-
-const SERVICES: Service[] = [
-  { id: '1', name: 'Маникюр с покрытием', price: 50, duration: 90, category: 'Ногти' },
-  { id: '2', name: 'Педикюр без покрытия', price: 40, duration: 60, category: 'Ногти' },
-  { id: '5', name: 'Снятие гель-лака', price: 10, duration: 20, category: 'Ногти' },
-  { id: '6', name: 'Укрепление гелем', price: 15, duration: 30, category: 'Ногти' },
-  { id: '7', name: 'Ремонт ногтя', price: 5, duration: 15, category: 'Ногти' },
-  { id: '8', name: 'Дизайн (1 палец)', price: 2, duration: 10, category: 'Ногти' },
-  { id: '9', name: 'Френч', price: 10, duration: 30, category: 'Ногти' },
-  { id: '10', name: 'Градиент', price: 15, duration: 40, category: 'Ногти' },
-  { id: '11', name: 'Матовый топ', price: 5, duration: 5, category: 'Ногти' },
-  { id: '12', name: 'Парафинотерапия', price: 15, duration: 20, category: 'Ногти' },
-  { id: '3', name: 'Наращивание ресниц 2D', price: 65, duration: 120, category: 'Ресницы' },
-  { id: '13', name: 'Наращивание ресниц 3D', price: 75, duration: 150, category: 'Ресницы' },
-  { id: '14', name: 'Классика', price: 55, duration: 90, category: 'Ресницы' },
-  { id: '4', name: 'Коррекция бровей', price: 15, duration: 30, category: 'Брови' },
-  { id: '15', name: 'Окрашивание бровей', price: 15, duration: 20, category: 'Брови' },
-  { id: '16', name: 'Ламинирование бровей', price: 40, duration: 60, category: 'Брови' },
-];
-
-const CATEGORIES = ['Ногти', 'Ресницы', 'Брови', 'Уход'];
+import { Check, Loader2 } from 'lucide-react';
+import { useServices } from '@/hooks/useServices';
 
 interface ServiceChipsProps {
   selected: string;
   onChange: (service: string) => void;
+  userId?: string;
 }
 
-export function ServiceChips({ selected, onChange }: ServiceChipsProps) {
-  const [activeTab, setActiveTab] = useState(CATEGORIES[0]);
+export function ServiceChips({ selected, onChange, userId }: ServiceChipsProps) {
+  const { services, categories, loading } = useServices(userId);
+  const [activeTab, setActiveTab] = useState<string>('');
+
+  useEffect(() => {
+    if (categories.length > 0 && !activeTab) {
+      setActiveTab(categories[0].name);
+    }
+  }, [categories, activeTab]);
+
   const selectedServices = selected ? selected.split(',').map(s => s.trim()).filter(Boolean) : [];
 
   const toggleService = (name: string) => {
@@ -51,6 +32,29 @@ export function ServiceChips({ selected, onChange }: ServiceChipsProps) {
       onChange(newSelected.join(', '));
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 bg-card/30 rounded-2xl border border-dashed border-border/50">
+        <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
+      </div>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <div className="text-center py-8 bg-card/30 rounded-2xl border border-dashed border-border/50">
+        <p className="text-xs text-muted-foreground">Услуги не найдены.</p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">Добавьте их в разделе «Услуги».</p>
+      </div>
+    );
+  }
+
+  const categoryNames = categories.length > 0
+    ? categories.map(c => c.name)
+    : Array.from(new Set(services.map(s => s.category || 'Без категории')));
+
+  const displayTab = activeTab || categoryNames[0];
 
   return (
     <div className="space-y-4">
@@ -70,10 +74,10 @@ export function ServiceChips({ selected, onChange }: ServiceChipsProps) {
         )}
       </div>
 
-      <Tabs defaultValue={CATEGORIES[0]} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={displayTab} onValueChange={setActiveTab} className="w-full">
         <ScrollArea className="w-full whitespace-nowrap rounded-lg mb-3">
           <TabsList className="inline-flex w-auto bg-transparent p-0 gap-2">
-            {CATEGORIES.map(category => (
+            {categoryNames.map(category => (
               <TabsTrigger
                 key={category}
                 value={category}
@@ -88,55 +92,59 @@ export function ServiceChips({ selected, onChange }: ServiceChipsProps) {
 
         <div className="bg-card/50 rounded-2xl border border-border/40 overflow-hidden">
           <ScrollArea className="h-[280px] w-full">
-            {CATEGORIES.map(category => (
+            {categoryNames.map(category => (
               <TabsContent key={category} value={category} className="mt-0 p-1">
                 <div className="flex flex-col gap-1">
-                  {SERVICES.filter(s => s.category === category).map((service) => {
-                    const isSelected = selectedServices.includes(service.name);
-                    return (
-                      <button
-                        key={service.id}
-                        type="button"
-                        onClick={() => toggleService(service.name)}
-                        className={cn(
-                          'w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 border border-transparent group',
-                          isSelected
-                            ? 'bg-primary/10 border-primary/20'
-                            : 'hover:bg-secondary/40'
-                        )}
-                      >
-                        <div className="flex items-center gap-3 text-left">
-                          <div className={cn(
-                            "w-5 h-5 rounded-md border flex items-center justify-center transition-all",
+                  {services
+                    .filter(s => (s.category || 'Без категории') === category)
+                    .map((service) => {
+                      const isSelected = selectedServices.includes(service.name);
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => toggleService(service.name)}
+                          className={cn(
+                            'w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 border border-transparent group',
                             isSelected
-                              ? "bg-primary border-primary text-primary-foreground"
-                              : "bg-background border-border"
-                          )}>
-                            {isSelected && <Check size={12} strokeWidth={4} />}
-                          </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className={cn(
-                              "text-sm font-bold transition-colors leading-tight",
-                              isSelected ? "text-primary" : "text-foreground"
+                              ? 'bg-primary/10 border-primary/20'
+                              : 'hover:bg-secondary/40'
+                          )}
+                        >
+                          <div className="flex items-center gap-3 text-left">
+                            <div className={cn(
+                              "w-5 h-5 rounded-md border flex items-center justify-center transition-all",
+                              isSelected
+                                ? "bg-primary border-primary text-primary-foreground"
+                                : "bg-background border-border"
                             )}>
-                              {service.name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground font-medium">
-                              {service.duration} мин
-                            </span>
+                              {isSelected && <Check size={12} strokeWidth={4} />}
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className={cn(
+                                "text-sm font-bold transition-colors leading-tight",
+                                isSelected ? "text-primary" : "text-foreground"
+                              )}>
+                                {service.name}
+                              </span>
+                              {service.duration && (
+                                <span className="text-[10px] text-muted-foreground font-medium">
+                                  {service.duration} мин
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className={cn(
-                          "px-2.5 py-1 rounded-full text-xs font-black transition-all",
-                          isSelected
-                            ? "bg-primary text-white shadow-sm"
-                            : "bg-secondary text-secondary-foreground"
-                        )}>
-                          {service.price}€
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className={cn(
+                            "px-2.5 py-1 rounded-full text-xs font-black transition-all",
+                            isSelected
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-secondary text-secondary-foreground"
+                          )}>
+                            {service.price}€
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
               </TabsContent>
             ))}

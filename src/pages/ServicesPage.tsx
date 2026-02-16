@@ -1,14 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Scissors, Search, Clock, Euro, MoreVertical, Edit2, Trash2, Plus, LayoutGrid, Tag } from 'lucide-react';
+import { Scissors, Search, Clock, Euro, MoreVertical, Edit2, Trash2, Plus, LayoutGrid, Tag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Dialog,
     DialogContent,
@@ -27,32 +21,28 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-interface Service {
-    id: string;
-    name: string;
-    price: number;
-    duration?: number; // in minutes
-    category: string;
-}
 
-const INITIAL_SERVICES: Service[] = [
-    { id: '1', name: 'Маникюр с покрытием', price: 50, duration: 90, category: 'Ногти' },
-    { id: '2', name: 'Педикюр без покрытия', price: 40, duration: 60, category: 'Ногти' },
-    { id: '3', name: 'Наращивание ресниц 2D', price: 65, duration: 120, category: 'Ресницы' },
-    { id: '4', name: 'Коррекция бровей', price: 15, duration: 30, category: 'Брови' },
-    { id: '5', name: 'Снятие гель-лака', price: 10, duration: 20, category: 'Ногти' },
-];
-
-const INITIAL_CATEGORIES = ['Ногти', 'Ресницы', 'Брови', 'Уход'];
+import { useServices, Service, Category } from '@/hooks/useServices';
 
 export default function ServicesPage() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [services, setServices] = useState<Service[]>(INITIAL_SERVICES);
-    const [categories, setCategories] = useState<string[]>(INITIAL_CATEGORIES);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const {
+        services,
+        categories,
+        loading,
+        addCategory,
+        addService,
+        deleteService,
+        updateService
+    } = useServices();
 
-    const [newService, setNewService] = useState({ name: '', price: '', duration: '', category: '' });
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [newService, setNewService] = useState({ name: '', price: '', duration: '', category_id: '' });
     const [newCategory, setNewCategory] = useState('');
+
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingService, setEditingService] = useState<Service | null>(null);
+    const [editForm, setEditForm] = useState({ name: '', price: '', duration: '', category_id: '' });
 
     useEffect(() => {
         const handleOpenCreate = () => setIsCreateOpen(true);
@@ -60,36 +50,69 @@ export default function ServicesPage() {
         return () => window.removeEventListener('open-service-create', handleOpenCreate);
     }, []);
 
-    const filteredServices = services.filter(service =>
-        service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const [selectedCategory, setSelectedCategory] = useState<string>('Все');
 
-    const handleAddService = () => {
-        if (!newService.name || !newService.price || !newService.category) return;
+    const filteredServices = services.filter(service => {
+        const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (service.category && service.category.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesCategory = selectedCategory === 'Все' || service.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
-        const service: Service = {
-            id: Math.random().toString(36).substr(2, 9),
+    const handleAddService = async () => {
+        if (!newService.name || !newService.price || !newService.category_id) return;
+
+        const success = await addService({
             name: newService.name,
             price: Number(newService.price),
-            duration: newService.duration ? Number(newService.duration) : undefined,
-            category: newService.category
-        };
+            duration: newService.duration ? Number(newService.duration) : null,
+            category_id: newService.category_id
+        });
 
-        setServices([service, ...services]);
-        setNewService({ name: '', price: '', duration: '', category: '' });
-        setIsCreateOpen(false);
+        if (success) {
+            setNewService({ name: '', price: '', duration: '', category_id: '' });
+            setIsCreateOpen(false);
+        }
     };
 
-    const handleAddCategory = () => {
-        if (!newCategory || categories.includes(newCategory)) return;
-        setCategories([...categories, newCategory]);
-        setNewCategory('');
-        setIsCreateOpen(false);
+    const handleAddCategory = async () => {
+        if (!newCategory || categories.some(c => c.name === newCategory)) return;
+        const success = await addCategory(newCategory);
+        if (success) {
+            setNewCategory('');
+            setIsCreateOpen(false);
+        }
     };
 
-    const handleDeleteService = (id: string) => {
-        setServices(services.filter(s => s.id !== id));
+    const handleDeleteService = async (id: string) => {
+        await deleteService(id);
+    };
+
+    const handleEditService = (service: Service) => {
+        setEditingService(service);
+        setEditForm({
+            name: service.name,
+            price: service.price.toString(),
+            duration: service.duration ? service.duration.toString() : '',
+            category_id: service.category_id || ''
+        });
+        setIsEditOpen(true);
+    };
+
+    const handleUpdateService = async () => {
+        if (!editingService || !editForm.name || !editForm.price || !editForm.category_id) return;
+
+        const success = await updateService(editingService.id, {
+            name: editForm.name,
+            price: Number(editForm.price),
+            duration: editForm.duration ? Number(editForm.duration) : null,
+            category_id: editForm.category_id
+        });
+
+        if (success) {
+            setIsEditOpen(false);
+            setEditingService(null);
+        }
     };
 
     return (
@@ -116,13 +139,39 @@ export default function ServicesPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+
+                    {/* Category Filter */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                        {['Все', ...categories.map(c => c.name)].map((category) => (
+                            <Button
+                                key={category}
+                                variant={selectedCategory === category ? "default" : "secondary"}
+                                size="sm"
+                                onClick={() => setSelectedCategory(category)}
+                                className={cn(
+                                    "rounded-full h-8 px-4 text-xs font-bold whitespace-nowrap transition-all",
+                                    selectedCategory === category
+                                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                        : "bg-card hover:bg-primary/10 hover:text-primary border-none"
+                                )}
+                            >
+                                {category}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             {/* Services List */}
             <div className="px-5">
                 <div className="grid gap-3">
-                    {filteredServices.length > 0 ? (
+                    {loading ? (
+                        <div className="flex flex-col gap-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-24 w-full bg-card rounded-3xl animate-pulse border border-border/50" />
+                            ))}
+                        </div>
+                    ) : filteredServices.length > 0 ? (
                         filteredServices.map((service, index) => (
                             <div
                                 key={service.id}
@@ -151,26 +200,26 @@ export default function ServicesPage() {
                                         </div>
                                     </div>
 
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <MoreVertical size={18} />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-2xl p-2 border-none shadow-xl bg-background/80 backdrop-blur">
-                                            <DropdownMenuItem className="rounded-xl flex items-center gap-2 cursor-pointer focus:bg-primary/10 focus:text-primary py-2 px-3">
-                                                <Edit2 size={16} />
-                                                <span className="font-medium">Редактировать</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                className="rounded-xl flex items-center gap-2 cursor-pointer focus:bg-destructive/10 focus:text-destructive text-destructive/80 py-2 px-3"
-                                                onClick={() => handleDeleteService(service.id)}
-                                            >
-                                                <Trash2 size={16} />
-                                                <span className="font-medium">Удалить</span>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <div className="flex items-center gap-1 self-start">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                                            onClick={() => handleEditService(service)}
+                                            title="Редактировать"
+                                        >
+                                            <Edit2 size={16} />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-full hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                                            onClick={() => handleDeleteService(service.id)}
+                                            title="Удалить"
+                                        >
+                                            <Trash2 size={16} />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -247,15 +296,15 @@ export default function ServicesPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Категория</Label>
                                 <Select
-                                    value={newService.category}
-                                    onValueChange={(value) => setNewService({ ...newService, category: value })}
+                                    value={newService.category_id}
+                                    onValueChange={(value) => setNewService({ ...newService, category_id: value })}
                                 >
                                     <SelectTrigger className="h-12 rounded-2xl bg-secondary/30 border-none px-4">
                                         <SelectValue placeholder="Выберите категорию" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl border-none shadow-xl">
                                         {categories.map(cat => (
-                                            <SelectItem key={cat} value={cat} className="rounded-xl">{cat}</SelectItem>
+                                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">{cat.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -284,6 +333,79 @@ export default function ServicesPage() {
                             </Button>
                         </TabsContent>
                     </Tabs>
+                </DialogContent>
+            </Dialog>
+            {/* Edit Service Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="sm:max-w-[425px] rounded-3xl p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black">Редактировать услугу</DialogTitle>
+                        <DialogDescription>
+                            Измените данные услуги в вашем прайс-листе.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-service-name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Название услуги</Label>
+                            <Input
+                                id="edit-service-name"
+                                placeholder="Например: Маникюр + гель-лак"
+                                className="h-12 rounded-2xl bg-secondary/30 border-none px-4"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-price" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Цена (€)</Label>
+                                <Input
+                                    id="edit-price"
+                                    type="number"
+                                    placeholder="50"
+                                    className="h-12 rounded-2xl bg-secondary/30 border-none px-4"
+                                    value={editForm.price}
+                                    onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-duration" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                                    Длительность <span className="lowercase font-normal opacity-70">(необязательно)</span>
+                                </Label>
+                                <Input
+                                    id="edit-duration"
+                                    type="number"
+                                    placeholder="60"
+                                    className="h-12 rounded-2xl bg-secondary/30 border-none px-4"
+                                    value={editForm.duration}
+                                    onChange={(e) => setEditForm({ ...editForm, duration: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-category" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Категория</Label>
+                            <Select
+                                value={editForm.category_id}
+                                onValueChange={(value) => setEditForm({ ...editForm, category_id: value })}
+                            >
+                                <SelectTrigger className="h-12 rounded-2xl bg-secondary/30 border-none px-4">
+                                    <SelectValue placeholder="Выберите категорию" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-none shadow-xl">
+                                    {categories.map(cat => (
+                                        <SelectItem key={cat.id} value={cat.id} className="rounded-xl">{cat.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <Button onClick={handleUpdateService} className="w-full h-12 rounded-2xl font-bold mt-2 shadow-lg shadow-primary/20">
+                            <Check size={20} className="mr-2" />
+                            Сохранить изменения
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

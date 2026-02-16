@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Loader2, ArrowLeft, Euro, CreditCard, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Euro, CreditCard, X, Search, User, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,12 +12,15 @@ import { useAdminEntries } from '@/hooks/useAdminEntries';
 import { useMasters } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useClients } from '@/hooks/useClients';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function AdminAddEntry() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { masters } = useMasters();
+  const { isAdmin } = useUserRole();
 
   // Get master and date from URL
   const masterId = searchParams.get('master');
@@ -25,7 +28,10 @@ export default function AdminAddEntry() {
   const selectedDate = dateParam ? parseISO(dateParam) : new Date();
   const selectedMaster = masters.find(m => m.user_id === masterId);
 
-  const { addEntry, loading } = useAdminEntries(masterId, selectedDate);
+  const [startTime, setStartTime] = useState('10:00');
+  const [endTime, setEndTime] = useState('11:00');
+
+  const { addEntry, loading, checkOverlap } = useAdminEntries(masterId, selectedDate);
 
   const [service, setService] = useState('');
   const [price, setPrice] = useState('');
@@ -33,8 +39,18 @@ export default function AdminAddEntry() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
+  const [clientId, setClientId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
+  const [clientSelectionMode, setClientSelectionMode] = useState<'manual' | 'list'>('list');
+  const [searchClientQuery, setSearchClientQuery] = useState('');
+
+  const { clients } = useClients();
+
+  const filteredClients = clients.filter(c =>
+    c.name.toLowerCase().includes(searchClientQuery.toLowerCase()) ||
+    (c.phone && c.phone.includes(searchClientQuery))
+  );
 
   const handleSubmit = async () => {
     if (!service || !price || !masterId) {
@@ -76,6 +92,16 @@ export default function AdminAddEntry() {
       return;
     }
 
+    // Check for overlap
+    if (transactionType === 'service' && checkOverlap(format(selectedDate, 'yyyy-MM-dd'), startTime, endTime)) {
+      toast({
+        title: 'Ошибка',
+        description: 'Это время уже занято другой записью у этого мастера',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     const { error } = await addEntry(
@@ -89,7 +115,10 @@ export default function AdminAddEntry() {
         transaction_type: transactionType,
         tips_payment_method: tipsPaymentMethod,
         client_name: clientName,
+        client_id: clientId,
         date: format(selectedDate, 'yyyy-MM-dd'),
+        start_time: startTime,
+        end_time: endTime,
       },
       masterId
     );
@@ -160,19 +189,148 @@ export default function AdminAddEntry() {
           </button>
         </div>
 
-        {/* Client Name */}
-        <div className="space-y-2">
-          <Label htmlFor="client" className="text-sm font-medium text-foreground">
-            Имя клиента
-          </Label>
-          <Input
-            id="client"
-            type="text"
-            placeholder="Опционально"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            className="h-12"
-          />
+        {/* Start and End Time - Only for service transactions */}
+        {transactionType === 'service' && (
+          <div className="flex gap-3 animate-fade-in">
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="startTime" className="text-sm font-medium">Начало</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="h-12"
+              />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="endTime" className="text-sm font-medium">Окончание</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="h-12"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Client Selection */}
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+          <div className="flex items-center justify-between px-1">
+            <Label className="text-sm font-bold">Клиент</Label>
+            <div className="flex p-0.5 bg-secondary rounded-lg">
+              <button
+                type="button"
+                onClick={() => setClientSelectionMode('list')}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientSelectionMode === 'list'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Из списка
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientSelectionMode('manual')}
+                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientSelectionMode === 'manual'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                Новый
+              </button>
+            </div>
+          </div>
+
+          {clientSelectionMode === 'manual' ? (
+            <Input
+              id="clientName"
+              type="text"
+              placeholder="Введите имя клиента..."
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="h-12"
+            />
+          ) : (
+            <div className="space-y-2 relative">
+              {!clientName && (
+                <div className="relative group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                  <Input
+                    placeholder="Поиск в базе..."
+                    className="pl-10 h-12 rounded-2xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                    value={searchClientQuery}
+                    onChange={(e) => setSearchClientQuery(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {searchClientQuery && filteredClients.length > 0 && !clientName && (
+                <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                  <div className="max-h-[200px] overflow-y-auto">
+                    {filteredClients.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setClientName(c.name);
+                          setClientId(c.id);
+                          setSearchClientQuery('');
+                          toast({
+                            title: 'Клиент выбран',
+                            description: c.name,
+                          });
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors text-left border-b border-border/50 last:border-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                            {c.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold">{c.name}</div>
+                            {isAdmin && c.phone && (
+                              <div className="text-[10px] text-muted-foreground">
+                                {c.phone.split(',')[0].split(':').pop()?.trim()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight size={14} className="text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {clientName && (
+                <div className="flex items-center justify-between p-3 bg-primary/5 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold">{clientName}</div>
+                      <div className="text-[10px] text-primary/60 font-medium">Выбран из базы</div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setClientName('');
+                      setClientId(null);
+                      setSearchClientQuery('');
+                    }}
+                    className="h-8 w-8 rounded-full"
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Service Selection */}
@@ -181,7 +339,7 @@ export default function AdminAddEntry() {
             {transactionType === 'service' ? 'Услуга' : 'Описание (за что)'}
           </Label>
           {transactionType === 'service' ? (
-            <ServiceChips selected={service} onChange={setService} />
+            <ServiceChips selected={service} onChange={setService} userId={masterId || undefined} />
           ) : (
             <Input
               placeholder="Например: Ресницы для админа"

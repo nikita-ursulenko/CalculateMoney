@@ -21,6 +21,7 @@ export interface Entry {
   transaction_type?: 'service' | 'debt_salon_to_master' | 'debt_master_to_salon';
   start_time?: string;
   end_time?: string;
+  client_id?: string | null;
 }
 
 export interface NewEntry {
@@ -36,6 +37,7 @@ export interface NewEntry {
   transaction_type?: 'service' | 'debt_salon_to_master' | 'debt_master_to_salon';
   start_time?: string;
   end_time?: string;
+  client_id?: string | null;
 }
 
 export function useEntries(selectedDate?: Date | DateRange) {
@@ -147,9 +149,33 @@ export function useEntries(selectedDate?: Date | DateRange) {
     }
   };
 
+  const checkOverlap = (date: string, startTime: string, endTime: string, excludeId?: string) => {
+    if (!startTime || !endTime) return false;
+
+    const toMinutes = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const newStart = toMinutes(startTime);
+    const newEnd = toMinutes(endTime);
+
+    return entries.some(entry => {
+      if (entry.id === excludeId) return false;
+      if (entry.date !== date) return false;
+      if (!entry.start_time || !entry.end_time) return false;
+      if (entry.transaction_type && entry.transaction_type !== 'service') return false;
+
+      const existStart = toMinutes(entry.start_time);
+      const existEnd = toMinutes(entry.end_time);
+
+      return newStart < existEnd && newEnd > existStart;
+    });
+  };
+
   useEffect(() => {
     fetchEntries();
   }, [user, selectedDate]);
 
-  return { entries, loading, addEntry, deleteEntry, updateEntry, refetch: fetchEntries };
+  return { entries, loading, addEntry, deleteEntry, updateEntry, checkOverlap, refetch: fetchEntries };
 }

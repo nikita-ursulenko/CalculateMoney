@@ -82,12 +82,14 @@ export default function Dashboard() {
   const loading = settingsLoading || entriesLoading;
 
   // Get rates from settings
-  const rateCash = settings?.use_different_rates
+  const isAdminUser = isAdmin; // Using the hook value
+
+  const rateCash = isAdminUser ? 100 : (settings?.use_different_rates
     ? Number(settings.rate_cash)
-    : Number(settings?.rate_general || 40);
-  const rateCard = settings?.use_different_rates
+    : Number(settings?.rate_general || 40));
+  const rateCard = isAdminUser ? 100 : (settings?.use_different_rates
     ? Number(settings.rate_card)
-    : Number(settings?.rate_general || 40);
+    : Number(settings?.rate_general || 40));
 
   // Calculate daily balance
   const dailyStats = entries.reduce(

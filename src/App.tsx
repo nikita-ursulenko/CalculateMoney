@@ -208,11 +208,11 @@ function AppRoutes() {
           <Route
             path="/clients"
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <PageWrapper custom={direction}>
                   <ClientsPage />
                 </PageWrapper>
-              </ProtectedRoute>
+              </AdminRoute>
             }
           />
           <Route path="*" element={<NotFound />} />

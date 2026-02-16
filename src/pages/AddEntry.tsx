@@ -13,6 +13,7 @@ import { useEntries } from '@/hooks/useEntries';
 import { useToast } from '@/hooks/use-toast';
 
 import { useUserRole } from '@/hooks/useUserRole';
+import { useClients } from '@/hooks/useClients';
 
 export default function AddEntry() {
   const { id } = useParams();
@@ -23,7 +24,7 @@ export default function AddEntry() {
   );
 
   const navigate = useNavigate();
-  const { addEntry, updateEntry } = useEntries();
+  const { addEntry, updateEntry, checkOverlap } = useEntries();
   const { toast } = useToast();
   const { isAdmin } = useUserRole();
 
@@ -33,6 +34,7 @@ export default function AddEntry() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
+  const [clientId, setClientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [recipientRole, setRecipientRole] = useState<'me' | 'master' | 'admin'>('me');
   const [recipientName, setRecipientName] = useState('');
@@ -42,18 +44,11 @@ export default function AddEntry() {
   const [clientSelectionMode, setClientSelectionMode] = useState<'manual' | 'list'>('list');
   const [searchClientQuery, setSearchClientQuery] = useState('');
 
-  // Real apps would fetch this from Supabase. Using the same mock for consistency.
-  const [clients] = useState([
-    { id: '1', name: 'Анна Петрова', phone: '+7 900 123-45-67' },
-    { id: '2', name: 'Елена Сидорова', phone: '+7 900 765-43-21' },
-    { id: '3', name: 'Мария Иванова', phone: '+7 900 111-22-33' },
-    { id: '4', name: 'Ольга Кузнецова', phone: '+7 900 444-55-66' },
-    { id: '5', name: 'Светлана Попова', phone: '+7 900 999-88-77' },
-  ]);
+  const { clients } = useClients();
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClientQuery.toLowerCase()) ||
-    c.phone.includes(searchClientQuery)
+    (c.phone && c.phone.includes(searchClientQuery))
   );
 
   // Load existing data if editing
@@ -86,6 +81,7 @@ export default function AddEntry() {
         setPaymentMethod(entry.payment_method as 'cash' | 'card');
         setTipsPaymentMethod((entry.tips_payment_method as 'cash' | 'card') || null);
         setClientName(entry.client_name || '');
+        setClientId(entry.client_id || null);
         setSelectedDate(new Date(entry.date));
         setRecipientRole((entry.recipient_role as 'me' | 'master' | 'admin') || 'me');
         setRecipientName(entry.recipient_name || '');
@@ -147,6 +143,15 @@ export default function AddEntry() {
       return;
     }
 
+    if (transactionType === 'service' && checkOverlap(format(selectedDate, 'yyyy-MM-dd'), startTime, endTime, id)) {
+      toast({
+        title: 'Ошибка',
+        description: 'Это время уже занято другой записью',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     const entryData = {
@@ -159,6 +164,7 @@ export default function AddEntry() {
       transaction_type: transactionType,
       tips_payment_method: tipsPaymentMethod,
       client_name: clientName,
+      client_id: clientId,
       date: format(selectedDate, 'yyyy-MM-dd'),
       recipient_role: recipientRole,
       recipient_name: recipientRole === 'master' ? recipientName : null,
@@ -302,6 +308,7 @@ export default function AddEntry() {
                       type="button"
                       onClick={() => {
                         setClientName(client.name);
+                        setClientId(client.id);
                         setSearchClientQuery('');
                         toast({
                           title: 'Клиент выбран',
@@ -316,7 +323,11 @@ export default function AddEntry() {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-bold">{client.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{client.phone}</span>
+                          {isAdmin && client.phone && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {client.phone.split(',')[0].split(':').pop()?.trim()}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <ChevronRight size={16} className="text-muted-foreground" />
@@ -341,6 +352,7 @@ export default function AddEntry() {
                     className="h-9 w-9 rounded-full hover:bg-primary/10 text-primary"
                     onClick={() => {
                       setClientName('');
+                      setClientId(null);
                       setSearchClientQuery('');
                     }}
                   >

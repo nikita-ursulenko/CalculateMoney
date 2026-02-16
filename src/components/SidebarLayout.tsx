@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
+import { useUserRole } from "@/hooks/useUserRole";
+
 interface SidebarLayoutProps {
     children: React.ReactNode;
 }
@@ -12,12 +14,17 @@ interface SidebarLayoutProps {
 export function SidebarLayout({ children }: SidebarLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const { isAdmin } = useUserRole();
     const isAddPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
+
+    // Non-admins cannot add clients
+    const canAddClient = isAdmin;
+
     const showPlusButton = location.pathname === '/dashboard' ||
         location.pathname === '/admin' ||
         location.pathname === '/admin/' ||
         location.pathname === '/services' ||
-        location.pathname === '/clients';
+        (location.pathname === '/clients' && canAddClient);
 
     return (
         <SidebarProvider>

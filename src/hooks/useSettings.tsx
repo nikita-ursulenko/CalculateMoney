@@ -6,6 +6,7 @@ export interface Settings {
   id: string;
   user_id: string;
   master_name: string;
+  master_profession: string;
   use_different_rates: boolean;
   rate_general: number;
   rate_cash: number;
@@ -32,7 +33,11 @@ export function useSettings() {
         .maybeSingle();
 
       if (error) throw error;
-      setSettings(data);
+      const dataWithDefaults = data as any;
+      setSettings({
+        ...dataWithDefaults,
+        master_profession: dataWithDefaults.master_profession || ''
+      });
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -50,7 +55,7 @@ export function useSettings() {
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
+
       setSettings({ ...settings, ...updates });
       return { error: null };
     } catch (error) {

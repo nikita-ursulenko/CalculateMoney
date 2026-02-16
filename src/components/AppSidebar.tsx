@@ -1,4 +1,4 @@
-import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users } from "lucide-react";
+import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     Sidebar,
@@ -16,12 +16,14 @@ import {
 import { cn } from "@/lib/utils";
 
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSettings } from "@/hooks/useSettings";
 
 export function AppSidebar() {
     const navigate = useNavigate();
     const location = useLocation();
     const { setOpenMobile } = useSidebar();
     const { isAdmin } = useUserRole();
+    const { settings } = useSettings();
 
     const handleNavigate = (path: string) => {
         navigate(path);
@@ -44,13 +46,15 @@ export function AppSidebar() {
     return (
         <Sidebar className="border-r border-border/50 bg-sidebar/50 backdrop-blur-xl">
             <SidebarHeader className="p-4">
-                <div className="flex items-center gap-2 px-2 py-4">
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg shadow-primary/20">
-                        BB
+                <div className="flex items-center gap-3 px-2 py-4">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0">
+                        <User size={20} />
                     </div>
-                    <div className="flex flex-col">
-                        <span className="font-bold text-sm leading-none">Beauty Balance</span>
-                        <span className="text-[10px] text-muted-foreground mt-1">Финансовый трекер</span>
+                    <div className="flex flex-col overflow-hidden">
+                        <span className="font-bold text-sm leading-none truncate">{settings?.master_name || 'Мастер'}</span>
+                        <span className="text-[10px] text-muted-foreground truncate mt-1">
+                            {settings?.master_profession || 'Специалист'}
+                        </span>
                     </div>
                 </div>
             </SidebarHeader>

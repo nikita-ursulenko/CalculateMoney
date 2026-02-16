@@ -19,19 +19,13 @@ export default function SettingsPage() {
   const { isAdmin } = useUserRole();
 
   const [masterName, setMasterName] = useState('');
-  const [useDifferentRates, setUseDifferentRates] = useState(false);
-  const [rateGeneral, setRateGeneral] = useState('40');
-  const [rateCash, setRateCash] = useState('40');
-  const [rateCard, setRateCard] = useState('40');
+  const [masterProfession, setMasterProfession] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (settings) {
       setMasterName(settings.master_name || '');
-      setUseDifferentRates(settings.use_different_rates);
-      setRateGeneral(String(settings.rate_general));
-      setRateCash(String(settings.rate_cash));
-      setRateCard(String(settings.rate_card));
+      setMasterProfession(settings.master_profession || '');
     }
   }, [settings]);
 
@@ -40,10 +34,7 @@ export default function SettingsPage() {
 
     const { error } = await updateSettings({
       master_name: masterName,
-      use_different_rates: useDifferentRates,
-      rate_general: parseFloat(rateGeneral) || 40,
-      rate_cash: parseFloat(rateCash) || 40,
-      rate_card: parseFloat(rateCard) || 40,
+      master_profession: masterProfession,
     });
 
     if (error) {
@@ -108,91 +99,20 @@ export default function SettingsPage() {
           />
         </div>
 
-        {/* Rate Toggle & Inputs - Hidden for Admin */}
-        {!isAdmin ? (
-          <div className="bg-card rounded-xl p-4 space-y-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Разный процент</p>
-                <p className="text-sm text-muted-foreground">
-                  Для наличных и карты
-                </p>
-              </div>
-              <Switch
-                checked={useDifferentRates}
-                onCheckedChange={setUseDifferentRates}
-              />
-            </div>
-
-            {useDifferentRates ? (
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="rateCash" className="text-sm">
-                    Процент для наличных (%)
-                  </Label>
-                  <Input
-                    id="rateCash"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={rateCash}
-                    onChange={(e) => setRateCash(e.target.value)}
-                    className="input-beauty h-12"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rateCard" className="text-sm">
-                    Процент для карты (%)
-                  </Label>
-                  <Input
-                    id="rateCard"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={rateCard}
-                    onChange={(e) => setRateCard(e.target.value)}
-                    className="input-beauty h-12"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="rateGeneral" className="text-sm">
-                  Общий процент (%)
-                </Label>
-                <Input
-                  id="rateGeneral"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={rateGeneral}
-                  onChange={(e) => setRateGeneral(e.target.value)}
-                  className="input-beauty h-12"
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <TrendingUp size={20} />
-              </div>
-              <div>
-                <p className="font-bold text-foreground">Доход администратора</p>
-                <p className="text-sm text-muted-foreground">
-                  Для вашего аккаунта расчет всегда ведется как <span className="text-primary font-bold">100%</span> от стоимости услуг.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Master Profession */}
+        <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <Label htmlFor="masterProfession" className="text-sm font-medium">
+            Профессия / Специализация
+          </Label>
+          <Input
+            id="masterProfession"
+            type="text"
+            placeholder="Например: Мастер маникюра"
+            value={masterProfession}
+            onChange={(e) => setMasterProfession(e.target.value)}
+            className="input-beauty h-12"
+          />
+        </div>
 
         {/* Save Button */}
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>

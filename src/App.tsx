@@ -18,6 +18,7 @@ import ClientsPage from "./pages/ClientsPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { SidebarLayout } from './components/SidebarLayout';
+import { InstallPrompt } from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -230,6 +231,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AppRoutes />
+          <InstallPrompt />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

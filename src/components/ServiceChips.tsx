@@ -91,7 +91,7 @@ export function ServiceChips({ selected, onChange, userId }: ServiceChipsProps) 
         </ScrollArea>
 
         <div className="bg-card/50 rounded-2xl border border-border/40 overflow-hidden">
-          <ScrollArea className="h-[280px] w-full">
+          <ScrollArea className="h-auto max-h-[280px] min-h-[100px] w-full">
             {categoryNames.map(category => (
               <TabsContent key={category} value={category} className="mt-0 p-1">
                 <div className="flex flex-col gap-1">

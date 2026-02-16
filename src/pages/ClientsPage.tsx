@@ -385,11 +385,11 @@ export default function ClientsPage() {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" size={18} />
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors" size={18} />
                         <Input
                             placeholder="Поиск по имени или телефону..."
-                            className="pl-10 h-12 rounded-2xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                            className="pl-10 h-12 rounded-2xl bg-card border-none shadow-sm focus-visible:ring-primary/20 text-base md:text-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -625,25 +625,34 @@ export default function ClientsPage() {
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
-                                                                            className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
+                                                                            className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary active:scale-95 transition-transform"
                                                                             onClick={async (e) => {
                                                                                 e.stopPropagation();
+                                                                                e.preventDefault();
+
                                                                                 const allPhones = selectedClient.phone.split(',').map(item => item.trim());
                                                                                 const selected = allPhones.splice(i, 1)[0];
                                                                                 const newPhoneStr = [selected, ...allPhones].join(', ');
 
+                                                                                // Optimistic update
+                                                                                const prevClient = { ...selectedClient };
+                                                                                setSelectedClient({ ...selectedClient, phone: newPhoneStr });
+                                                                                toast.success('Основной номер изменен');
+
                                                                                 const { error } = await updateClient(selectedClient.id, {
-                                                                                    ...selectedClient,
+                                                                                    name: selectedClient.name,
+                                                                                    description: selectedClient.description || undefined,
                                                                                     phone: newPhoneStr
                                                                                 });
 
-                                                                                if (!error) {
-                                                                                    setSelectedClient({ ...selectedClient, phone: newPhoneStr });
-                                                                                    toast.success('Основной номер изменен');
+                                                                                if (error) {
+                                                                                    // Revert on error
+                                                                                    setSelectedClient(prevClient);
+                                                                                    toast.error('Не удалось изменить номер');
                                                                                 }
                                                                             }}
                                                                         >
-                                                                            <Check size={16} />
+                                                                            <Check size={20} />
                                                                         </Button>
                                                                     )}
                                                                     {i === 0 && (

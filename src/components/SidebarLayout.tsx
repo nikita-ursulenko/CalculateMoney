@@ -16,6 +16,12 @@ import { SidebarSwipeGesture } from "./SidebarSwipeGesture";
 export function SidebarLayout({ children }: SidebarLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Do not render sidebar layout on the auth page
+    if (location.pathname === '/') {
+        return <>{children}</>;
+    }
+
     const { isAdmin } = useUserRole();
     const isAddPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
 

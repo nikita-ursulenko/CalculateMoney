@@ -144,9 +144,9 @@ export function useExportData() {
 
       const summaryRow = `
         <tr class="daily-summary-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">${label}:</td>
+          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">${label}</td>
           <td colspan="3" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7;">
-            ${sign}${Math.abs(dayBalance).toFixed(2)}€
+             ${sign}${Math.abs(dayBalance).toFixed(2)}€
           </td>
         </tr>
       `;
@@ -172,7 +172,7 @@ export function useExportData() {
         </tr>
       `;
 
-      return headerRow + rows + summaryRow + totalsRow;
+      return headerRow + rows + totalsRow + summaryRow;
     }).join('');
 
     // Build HTML content

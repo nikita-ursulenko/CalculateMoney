@@ -5,22 +5,26 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Entry, NewEntry } from './useEntries';
 
+import { useWorkspace } from './useWorkspace';
+
 export function useAdminEntries(selectedMasterId: string | null, selectedDate?: Date | DateRange) {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEntries = async () => {
-    if (!user || !selectedMasterId) {
+    if (!user || !selectedMasterId || !activeWorkspace) {
       setEntries([]);
       setLoading(false);
       return;
     }
 
     try {
-      let query = supabase
+      let query = (supabase as any)
         .from('entries')
         .select('*')
+        .eq('workspace_id', activeWorkspace.workspace_id)
         .eq('user_id', selectedMasterId)
         .order('date', { ascending: true })
         .order('created_at', { ascending: true });
@@ -55,12 +59,13 @@ export function useAdminEntries(selectedMasterId: string | null, selectedDate?: 
   };
 
   const addEntry = async (entry: NewEntry, masterId: string) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No user or workspace') };
 
     try {
-      const { error } = await supabase.from('entries').insert({
+      const { error } = await (supabase as any).from('entries').insert({
         ...entry,
         user_id: masterId,
+        workspace_id: activeWorkspace.workspace_id,
       });
 
       if (error) throw error;
@@ -74,13 +79,14 @@ export function useAdminEntries(selectedMasterId: string | null, selectedDate?: 
   };
 
   const deleteEntry = async (id: string) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No user or workspace') };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('entries')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('workspace_id', activeWorkspace.workspace_id);
 
       if (error) throw error;
 
@@ -93,13 +99,14 @@ export function useAdminEntries(selectedMasterId: string | null, selectedDate?: 
   };
 
   const updateEntry = async (id: string, updates: Partial<NewEntry>) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No user or workspace') };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('entries')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('workspace_id', activeWorkspace.workspace_id);
 
       if (error) throw error;
 

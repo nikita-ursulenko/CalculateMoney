@@ -30,6 +30,11 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
   const isDebt = entry.transaction_type && entry.transaction_type !== 'service';
   const rate = isCash ? rateCash : rateCard;
 
+  const actsLikeCard = !isCash || entry.recipient_role === 'admin';
+  const baseRate = entry.master_revenue_share !== null && entry.master_revenue_share !== undefined
+    ? entry.master_revenue_share
+    : (actsLikeCard ? rateCard : rateCash);
+
   // Calculate Service Balance
   let balance: number;
 
@@ -38,9 +43,9 @@ export function EntryCard({ entry, rateCash, rateCard, onDelete, showTips = true
   } else if (entry.transaction_type === 'debt_master_to_salon') {
     balance = -entry.price;
   } else {
-    balance = isCash
-      ? -(entry.price * (1 - rate / 100))
-      : entry.price * (rate / 100);
+    balance = actsLikeCard
+      ? entry.price * (baseRate / 100)
+      : -(entry.price * (1 - baseRate / 100));
   }
 
   // Calculate Tips Balance

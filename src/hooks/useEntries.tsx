@@ -41,6 +41,7 @@ export interface NewEntry {
   end_time?: string;
   client_id?: string | null;
   master_revenue_share?: number | null;
+  user_id?: string;
 }
 
 export function useEntries(selectedDate?: Date | DateRange) {
@@ -61,6 +62,7 @@ export function useEntries(selectedDate?: Date | DateRange) {
         .from('entries')
         .select('*')
         .eq('workspace_id', activeWorkspace.workspace_id)
+        .eq('user_id', user.id)
         .order('date', { ascending: true }) // Order by date first (Oldest first as requested)
         .order('created_at', { ascending: true });
 
@@ -99,9 +101,9 @@ export function useEntries(selectedDate?: Date | DateRange) {
 
     try {
       const { error } = await (supabase as any).from('entries').insert({
-        ...entry,
         user_id: user.id,
-        workspace_id: activeWorkspace.workspace_id
+        workspace_id: activeWorkspace.workspace_id,
+        ...entry
       });
 
       if (error) throw error;

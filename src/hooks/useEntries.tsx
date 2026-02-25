@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -22,6 +23,7 @@ export interface Entry {
   start_time?: string;
   end_time?: string;
   client_id?: string | null;
+  master_revenue_share?: number | null;
 }
 
 export interface NewEntry {
@@ -38,10 +40,12 @@ export interface NewEntry {
   start_time?: string;
   end_time?: string;
   client_id?: string | null;
+  master_revenue_share?: number | null;
 }
 
 export function useEntries(selectedDate?: Date | DateRange) {
   const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,10 +57,10 @@ export function useEntries(selectedDate?: Date | DateRange) {
     }
 
     try {
-      let query = supabase
+      let query = (supabase as any)
         .from('entries')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('workspace_id', activeWorkspace.workspace_id)
         .order('date', { ascending: true }) // Order by date first (Oldest first as requested)
         .order('created_at', { ascending: true });
 
@@ -91,12 +95,13 @@ export function useEntries(selectedDate?: Date | DateRange) {
   };
 
   const addEntry = async (entry: NewEntry) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user') };
 
     try {
-      const { error } = await supabase.from('entries').insert({
+      const { error } = await (supabase as any).from('entries').insert({
         ...entry,
         user_id: user.id,
+        workspace_id: activeWorkspace.workspace_id
       });
 
       if (error) throw error;
@@ -110,14 +115,14 @@ export function useEntries(selectedDate?: Date | DateRange) {
   };
 
   const deleteEntry = async (id: string) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user') };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('entries')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('workspace_id', activeWorkspace.workspace_id);
 
       if (error) throw error;
 
@@ -130,14 +135,14 @@ export function useEntries(selectedDate?: Date | DateRange) {
   };
 
   const updateEntry = async (id: string, updates: Partial<NewEntry>) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user') };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('entries')
         .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('workspace_id', activeWorkspace.workspace_id);
 
       if (error) throw error;
 
@@ -175,7 +180,7 @@ export function useEntries(selectedDate?: Date | DateRange) {
 
   useEffect(() => {
     fetchEntries();
-  }, [user, selectedDate]);
+  }, [user, activeWorkspace?.workspace_id, selectedDate]);
 
   return { entries, loading, addEntry, deleteEntry, updateEntry, checkOverlap, refetch: fetchEntries };
 }

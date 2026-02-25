@@ -39,11 +39,13 @@ export default function ClientsPage() {
     const [newName, setNewName] = useState('');
     const [newPhones, setNewPhones] = useState<{ label: string, number: string }[]>([{ label: '', number: '' }]);
     const [newDescription, setNewDescription] = useState('');
+    const [newMasterRevenueShare, setNewMasterRevenueShare] = useState<string>('');
 
     // States for editing
     const [editName, setEditName] = useState('');
     const [editPhones, setEditPhones] = useState<{ label: string, number: string }[]>([]);
     const [editDescription, setEditDescription] = useState('');
+    const [editMasterRevenueShare, setEditMasterRevenueShare] = useState<string>('');
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [historyEntries, setHistoryEntries] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
@@ -54,6 +56,7 @@ export default function ClientsPage() {
         if (selectedClient) {
             setEditName(selectedClient.name);
             setEditDescription(selectedClient.description || '');
+            setEditMasterRevenueShare(selectedClient.master_revenue_share?.toString() || '');
 
             // Parse comma-separated phone string into array of objects
             if (selectedClient.phone) {
@@ -107,6 +110,7 @@ export default function ClientsPage() {
             name: newName,
             phone: phoneStr,
             description: newDescription,
+            master_revenue_share: newMasterRevenueShare ? Number(newMasterRevenueShare) : null,
         });
 
         if (!error) {
@@ -114,6 +118,7 @@ export default function ClientsPage() {
             setNewName('');
             setNewPhones([{ label: '', number: '' }]);
             setNewDescription('');
+            setNewMasterRevenueShare('');
             toast.success('Клиент успешно создан');
         } else {
             toast.error('Ошибка при создании клиента');
@@ -154,11 +159,12 @@ export default function ClientsPage() {
         const { error } = await updateClient(selectedClient.id, {
             name: editName,
             phone: phoneStr,
-            description: editDescription
+            description: editDescription,
+            master_revenue_share: editMasterRevenueShare ? Number(editMasterRevenueShare) : null
         });
 
         if (!error) {
-            setSelectedClient({ ...selectedClient, name: editName, phone: phoneStr, description: editDescription });
+            setSelectedClient({ ...selectedClient, name: editName, phone: phoneStr, description: editDescription, master_revenue_share: editMasterRevenueShare ? Number(editMasterRevenueShare) : null });
             setIsEditMode(false);
             toast.success('Данные обновлены');
         } else {
@@ -553,6 +559,24 @@ export default function ClientsPage() {
                                     onChange={(e) => setNewDescription(e.target.value)}
                                 />
                             </div>
+
+                            {isAdmin && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="revenue_share" className="text-sm font-bold ml-1 text-primary flex items-center gap-2">
+                                        <Euro size={14} /> Индивидуальный % мастера (Оставьте пустым для стандарта)
+                                    </Label>
+                                    <Input
+                                        id="revenue_share"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        placeholder="Например: 60"
+                                        className="input-beauty h-12"
+                                        value={newMasterRevenueShare}
+                                        onChange={(e) => setNewMasterRevenueShare(e.target.value)}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
                             <Button
@@ -753,6 +777,24 @@ export default function ClientsPage() {
                                                 onChange={(e) => setEditDescription(e.target.value)}
                                             />
                                         </div>
+
+                                        {isAdmin && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-revenue-share" className="text-sm font-bold ml-1 text-primary flex items-center gap-2">
+                                                    <Euro size={14} /> Индивидуальный процент
+                                                </Label>
+                                                <Input
+                                                    id="edit-revenue-share"
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    placeholder="Например: 60"
+                                                    className="input-beauty h-12"
+                                                    value={editMasterRevenueShare}
+                                                    onChange={(e) => setEditMasterRevenueShare(e.target.value)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 mt-2">
                                         <Button

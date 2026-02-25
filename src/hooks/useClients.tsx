@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 
 export interface Client {
     id: string;
@@ -13,16 +14,19 @@ export interface Client {
     lastVisit?: string;
     totalSpent?: number;
     visitCount?: number;
+    master_revenue_share?: number | null;
 }
 
 export interface NewClient {
     name: string;
     phone?: string;
     description?: string;
+    master_revenue_share?: number | null;
 }
 
 export function useClients() {
     const { user } = useAuth();
+    const { activeWorkspace } = useWorkspace();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -36,16 +40,20 @@ export function useClients() {
         try {
             // In a real app we might want to aggregate stats here, 
             // but for now we'll just fetch the clients.
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('clients')
                 .select('*')
+                .eq('workspace_id', activeWorkspace.workspace_id)
                 .order('name', { ascending: true });
 
             if (error) throw error;
 
+            // Type cast to prevent "Type instantiation is excessively deep" errors from recursive foreign keys
+            const rawClients = (data as unknown) as Client[];
+
             // For now, visits stats would be mock or calculated client-side 
             // if we don't have a complex join/view.
-            setClients(data || []);
+            setClients(rawClients || []);
         } catch (error) {
             console.error('Error fetching clients:', error);
         } finally {
@@ -54,14 +62,15 @@ export function useClients() {
     };
 
     const addClient = async (client: NewClient) => {
-        if (!user) return { error: new Error('No user'), data: null };
+        if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user'), data: null };
 
         try {
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('clients')
                 .insert({
                     ...client,
-                    user_id: user.id
+                    user_id: user.id,
+                    workspace_id: activeWorkspace.workspace_id
                 })
                 .select()
                 .single();
@@ -77,14 +86,14 @@ export function useClients() {
     };
 
     const updateClient = async (id: string, updates: Partial<NewClient>) => {
-        if (!user) return { error: new Error('No user') };
+        if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user') };
 
         try {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('clients')
                 .update(updates)
                 .eq('id', id)
-                .eq('user_id', user.id);
+                .eq('workspace_id', activeWorkspace.workspace_id);
 
             if (error) throw error;
 
@@ -97,14 +106,14 @@ export function useClients() {
     };
 
     const deleteClient = async (id: string) => {
-        if (!user) return { error: new Error('No user') };
+        if (!user || !activeWorkspace) return { error: new Error('No valid workspace or user') };
 
         try {
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('clients')
                 .delete()
                 .eq('id', id)
-                .eq('user_id', user.id);
+                .eq('workspace_id', activeWorkspace.workspace_id);
 
             if (error) throw error;
 
@@ -118,7 +127,7 @@ export function useClients() {
 
     useEffect(() => {
         fetchClients();
-    }, [user]);
+    }, [user, activeWorkspace?.workspace_id]);
 
     return { clients, loading, addClient, updateClient, deleteClient, refetch: fetchClients };
 }

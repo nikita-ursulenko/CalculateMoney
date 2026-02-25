@@ -130,9 +130,14 @@ export default function Dashboard() {
       // If Master has cash, I have 0.
       // So effectively, it acts different.
       // But user said: "If Master -> write name". "If Admin -> like card".
-      // So for Admin, we use rateCard.
+      // Determine entry-specific rate
+      // 1. Entry custom rate (highest priority)
+      // 2. Global rate (fallback)
+      const baseRate = entry.master_revenue_share !== null && entry.master_revenue_share !== undefined
+        ? entry.master_revenue_share
+        : (actsLikeCard ? rateCard : rateCash);
 
-      const rate = actsLikeCard ? rateCard : rateCash;
+      const rate = isAdminUser ? 100 : baseRate;
 
       const tipsPaymentMethod = entry.tips_payment_method || 'cash';
 

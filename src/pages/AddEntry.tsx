@@ -43,6 +43,7 @@ export default function AddEntry() {
   const [endTime, setEndTime] = useState('11:00');
   const [clientSelectionMode, setClientSelectionMode] = useState<'manual' | 'list'>('list');
   const [searchClientQuery, setSearchClientQuery] = useState('');
+  const [masterRevenueShare, setMasterRevenueShare] = useState<string>('');
 
   const { clients } = useClients();
 
@@ -88,6 +89,7 @@ export default function AddEntry() {
         setTransactionType(entry.transaction_type || 'service');
         setStartTime(entry.start_time || '10:00');
         setEndTime(entry.end_time || '11:00');
+        setMasterRevenueShare(entry.master_revenue_share?.toString() || '');
       }
       setLoading(false);
     };
@@ -170,6 +172,7 @@ export default function AddEntry() {
       recipient_name: recipientRole === 'master' ? recipientName : null,
       start_time: startTime,
       end_time: endTime,
+      master_revenue_share: masterRevenueShare ? Number(masterRevenueShare) : null,
     };
 
     let result;
@@ -557,6 +560,25 @@ export default function AddEntry() {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {/* Master Custom Percentage Override */}
+        {transactionType === 'service' && isAdmin && (
+          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <Label htmlFor="masterShare" className="text-sm font-bold text-primary flex items-center gap-2">
+              <Euro size={14} /> Индивидуальный процент мастера
+            </Label>
+            <Input
+              id="masterShare"
+              type="number"
+              min="0"
+              max="100"
+              placeholder="Оставьте пустым для стандарта или % клиента"
+              value={masterRevenueShare}
+              onChange={(e) => setMasterRevenueShare(e.target.value)}
+              className="input-beauty h-12 border-primary/20 focus-visible:ring-primary/30"
+            />
           </div>
         )}
 

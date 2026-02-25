@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 import { toast } from 'sonner';
 
 export interface Service {
@@ -19,17 +20,19 @@ export interface Category {
 
 export function useServices(ownerId?: string) {
     const { user } = useAuth();
+    const { activeWorkspace } = useWorkspace();
     const [services, setServices] = useState<Service[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const targetUserId = ownerId || user?.id;
+    const targetWorkspaceId = activeWorkspace?.workspace_id;
 
     const fetchCategories = useCallback(async () => {
-        if (!targetUserId) return;
-        const { data, error } = await supabase
+        if (!targetWorkspaceId) return;
+        const { data, error } = await (supabase as any)
             .from('categories')
             .select('*')
+            .eq('workspace_id', targetWorkspaceId)
             .order('name');
 
         if (error) {
@@ -37,13 +40,14 @@ export function useServices(ownerId?: string) {
             return;
         }
         setCategories(data || []);
-    }, [targetUserId]);
+    }, [targetWorkspaceId]);
 
     const fetchServices = useCallback(async () => {
-        if (!targetUserId) return;
-        const { data, error } = await supabase
+        if (!targetWorkspaceId) return;
+        const { data, error } = await (supabase as any)
             .from('services')
             .select('*, categories(name)')
+            .eq('workspace_id', targetWorkspaceId)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -58,24 +62,28 @@ export function useServices(ownerId?: string) {
         }));
 
         setServices(mappedServices);
-    }, [targetUserId]);
+    }, [targetWorkspaceId]);
 
     const fetchData = useCallback(async () => {
-        if (!targetUserId) return;
+        if (!targetWorkspaceId) return;
         setLoading(true);
         await Promise.all([fetchCategories(), fetchServices()]);
         setLoading(false);
-    }, [fetchCategories, fetchServices, targetUserId]);
+    }, [fetchCategories, fetchServices, targetWorkspaceId]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
     const addCategory = async (name: string) => {
-        if (!user || !name) return;
-        const { data, error } = await supabase
+        if (!user || !activeWorkspace) return;
+        const { data, error } = await (supabase as any)
             .from('categories')
-            .insert({ name, user_id: user.id })
+            .insert({
+                name,
+                user_id: user.id,
+                workspace_id: activeWorkspace.workspace_id
+            })
             .select()
             .single();
 
@@ -90,15 +98,16 @@ export function useServices(ownerId?: string) {
     };
 
     const addService = async (service: Omit<Service, 'id' | 'category'>) => {
-        if (!user) return;
-        const { data, error } = await supabase
+        if (!user || !activeWorkspace) return;
+        const { data, error } = await (supabase as any)
             .from('services')
             .insert({
                 name: service.name,
                 price: service.price,
                 duration: service.duration,
                 category_id: service.category_id,
-                user_id: user.id
+                user_id: user.id,
+                workspace_id: activeWorkspace.workspace_id
             })
             .select('*, categories(name)')
             .single();
@@ -119,7 +128,7 @@ export function useServices(ownerId?: string) {
     };
 
     const deleteService = async (id: string) => {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
             .from('services')
             .delete()
             .eq('id', id);
@@ -135,7 +144,7 @@ export function useServices(ownerId?: string) {
     };
 
     const updateService = async (id: string, updates: Partial<Service>) => {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
             .from('services')
             .update(updates)
             .eq('id', id)

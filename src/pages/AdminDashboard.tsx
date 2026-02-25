@@ -116,7 +116,16 @@ export default function AdminDashboard() {
       }
 
       const actsLikeCard = !isCash || role === 'admin';
-      const rate = actsLikeCard ? rateCard : rateCash;
+
+      // Determine entry-specific rate
+      // 1. Entry custom rate (highest priority)
+      // 2. Selected master rate (fallback)
+      const baseRate = entry.master_revenue_share !== null && entry.master_revenue_share !== undefined
+        ? entry.master_revenue_share
+        : (actsLikeCard ? rateCard : rateCash);
+
+      const rate = baseRate;
+
       const tipsPaymentMethod = entry.tips_payment_method || 'cash';
 
       const serviceBalance = actsLikeCard

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Loader2, Save, TrendingUp, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, LogOut, Loader2, Save, TrendingUp, Plus, Trash2, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,16 +16,18 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useProfessions } from '@/hooks/useProfessions';
+import { useWorkspaceMembers } from '@/hooks/useWorkspaceMembers';
 
-import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { settings, loading: settingsLoading, updateSettings } = useSettings();
   const { signOut } = useAuth();
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, activeWorkspace } = useWorkspace();
   const { professions, addProfession, deleteProfession } = useProfessions();
+  const { members, updateMemberPermissions, removeMember } = useWorkspaceMembers();
 
   const [masterName, setMasterName] = useState('');
   const [masterProfession, setMasterProfession] = useState('');
@@ -146,6 +148,54 @@ export default function SettingsPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Admin Section: Team Management */}
+        {isAdmin && (
+          <div className="pt-4 border-t border-border/50 animate-fade-in" style={{ animationDelay: '0.12s' }}>
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+              <Users size={14} />
+              Команда Салона
+            </h3>
+
+            <div className="space-y-3">
+              {members.map((member) => (
+                <div key={member.user_id} className="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-sm">
+                        {member.settings?.master_name || 'Неизвестный мастер'}
+                        {member.user_id === activeWorkspace?.user_id && ' (Вы)'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {member.settings?.master_profession || 'Специалист'} • {member.role === 'admin' ? 'Админ' : 'Мастер'}
+                      </p>
+                    </div>
+                    {member.user_id !== activeWorkspace?.user_id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeMember(member.user_id)}
+                        className="text-muted-foreground hover:text-destructive h-8 w-8"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
+                  </div>
+
+                  {member.role !== 'admin' && (
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <Label className="text-xs text-muted-foreground">Управление клиентами</Label>
+                      <Switch
+                        checked={member.manage_clients}
+                        onCheckedChange={(checked) => updateMemberPermissions(member.user_id, { manage_clients: checked })}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Admin Section: Manage Professions */}
         {isAdmin && (

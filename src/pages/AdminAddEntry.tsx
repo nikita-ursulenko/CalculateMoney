@@ -44,6 +44,7 @@ export default function AdminAddEntry() {
   const [tipsPaymentMethod, setTipsPaymentMethod] = useState<'cash' | 'card' | null>(null);
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState<string | null>(null);
+  const [masterRevenueShare, setMasterRevenueShare] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [loadingEntry, setLoadingEntry] = useState(false); // Only for editing state
   const [transactionType, setTransactionType] = useState<'service' | 'debt_salon_to_master' | 'debt_master_to_salon'>('service');
@@ -87,6 +88,7 @@ export default function AdminAddEntry() {
             setEndTime(data.end_time || '11:00');
             setClientName(data.client_name);
             setClientId(data.client_id || null);
+            setMasterRevenueShare((data as any).master_revenue_share?.toString() || '');
           } else {
             setService(data.service); // Description for debt
             setPrice(data.price.toString());
@@ -176,6 +178,7 @@ export default function AdminAddEntry() {
       start_time: startTime,
       end_time: endTime,
       user_id: masterId, // Ensure user_id is set/updated
+      master_revenue_share: masterRevenueShare ? Number(masterRevenueShare) : null
     };
 
     let error;
@@ -520,7 +523,24 @@ export default function AdminAddEntry() {
           </div>
         )}
 
-
+        {/* Master Custom Percentage Override */}
+        {transactionType === 'service' && isAdmin && (
+          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <Label htmlFor="masterShare" className="text-sm font-bold text-primary flex items-center gap-2">
+              <Euro size={14} /> Изменить % мастера для этой записи
+            </Label>
+            <Input
+              id="masterShare"
+              type="number"
+              min="0"
+              max="100"
+              placeholder="Оставьте пустым для стандарта или % клиента"
+              value={masterRevenueShare}
+              onChange={(e) => setMasterRevenueShare(e.target.value)}
+              className="h-12 border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
+            />
+          </div>
+        )}
 
         {/* Submit Button */}
         <Button

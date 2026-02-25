@@ -1,4 +1,4 @@
-import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User } from "lucide-react";
+import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User, ChevronsUpDown, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -14,16 +14,24 @@ import {
     SidebarGroupContent,
     useSidebar
 } from "@/components/ui/sidebar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-import { useUserRole } from "@/hooks/useUserRole";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useSettings } from "@/hooks/useSettings";
 
 export function AppSidebar() {
     const navigate = useNavigate();
     const location = useLocation();
     const { setOpenMobile } = useSidebar();
-    const { isAdmin } = useUserRole();
+
+    const { activeWorkspace, workspaces, setActiveWorkspace, isAdmin } = useWorkspace();
     const { settings } = useSettings();
     const { signOut } = useAuth();
 
@@ -48,17 +56,55 @@ export function AppSidebar() {
     return (
         <Sidebar className="border-r border-border/50 bg-sidebar/50 backdrop-blur-xl">
             <SidebarHeader className="p-4">
-                <div className="flex items-center gap-3 px-2 py-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0">
-                        <User size={20} />
-                    </div>
-                    <div className="flex flex-col overflow-hidden">
-                        <span className="font-bold text-sm leading-none truncate">{settings?.master_name || 'Мастер'}</span>
-                        <span className="text-[10px] text-muted-foreground truncate mt-1">
-                            {settings?.master_profession || 'Специалист'}
-                        </span>
-                    </div>
-                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            className="bg-background/50 hover:bg-background/80 border border-border/50 shadow-sm rounded-xl data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                        >
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <User className="size-4" />
+                            </div>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                                <span className="truncate font-bold">
+                                    {activeWorkspace?.workspace?.name || 'Загрузка...'}
+                                </span>
+                                <span className="truncate text-[10px] text-muted-foreground uppercase tracking-widest">
+                                    {isAdmin ? 'Администратор' : (settings?.master_profession || 'Мастер')}
+                                </span>
+                            </div>
+                            <ChevronsUpDown className="ml-auto size-4" />
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl"
+                        align="start"
+                        side="bottom"
+                        sideOffset={4}
+                    >
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                            Ваши Салоны
+                        </div>
+                        {workspaces.map((ws) => (
+                            <DropdownMenuItem
+                                key={ws.workspace_id}
+                                onClick={() => setActiveWorkspace(ws.workspace_id)}
+                                className={cn(
+                                    "gap-2 p-2 cursor-pointer",
+                                    activeWorkspace?.workspace_id === ws.workspace_id && "bg-accent"
+                                )}
+                            >
+                                <div className="flex size-6 items-center justify-center rounded-sm border bg-background">
+                                    <User className="size-3 text-muted-foreground" />
+                                </div>
+                                <span className="flex-1 truncate">{ws.workspace?.name}</span>
+                                {activeWorkspace?.workspace_id === ws.workspace_id && (
+                                    <Check className="size-4 text-primary" />
+                                )}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>

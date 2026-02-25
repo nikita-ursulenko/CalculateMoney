@@ -128,16 +128,39 @@ export function useExportData() {
       const color = isPositive ? '#27ae60' : '#c0392b';
       const sign = isPositive ? '+' : '-';
 
+      // Вычисление общих сумм за день
+      const dayTotalService = dateEntries.reduce((acc, e) => {
+        if (e.transaction_type === 'debt_salon_to_master' || e.transaction_type === 'debt_master_to_salon') return acc;
+        return acc + e.price;
+      }, 0);
+      const dayTotalTips = dateEntries.reduce((acc, e) => {
+        if (e.tips > 0 && e.tips_payment_method === 'card') return acc + e.tips;
+        return acc;
+      }, 0);
+      const dayTotalCash = dateEntries.reduce((acc, e) => e.payment_method === 'cash' ? acc + e.price : acc, 0);
+      const dayTotalCard = dateEntries.reduce((acc, e) => e.payment_method !== 'cash' ? acc + e.price : acc, 0) + dayTotalTips;
+      const dayTotal = dayTotalService + dayTotalTips;
+
       const summaryRow = `
         <tr class="daily-summary-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
           <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ИТОГО ЗА ДЕНЬ:</td>
-          <td colspan="3" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px;">
+          <td colspan="2" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px;">
             ${label} ${sign}${Math.abs(dayBalance).toFixed(2)}€
           </td>
         </tr>
       `;
 
-      return headerRow + rows + summaryRow;
+      const totalsRow = `
+        <tr class="daily-totals-row" style="background-color: #fdfdfd; border-bottom: 2px solid #bdc3c7; page-break-inside: avoid;">
+          <td colspan="6" style="text-align: right; font-size: 11px; padding: 6px 8px; color: #7f8c8d;">
+            <span style="margin-right: 15px;">Общее: <b>${dayTotal.toFixed(2)}€</b></span>
+            <span style="margin-right: 15px;">Картой: <b>${dayTotalCard.toFixed(2)}€</b></span>
+            <span>Наличными: <b>${dayTotalCash.toFixed(2)}€</b></span>
+          </td>
+        </tr>
+      `;
+
+      return headerRow + rows + summaryRow + totalsRow;
     }).join('');
 
     // Build HTML content

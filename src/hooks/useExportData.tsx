@@ -152,12 +152,12 @@ export function useExportData() {
 
       const totalsRow = `
         <tr class="daily-totals-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ОБОРОТ ЗА ДЕНЬ:</td>
-          <td colspan="2" style="font-weight: bold; color: #34495e; font-size: 11px; padding: 8px;">
-            <span style="margin-right: 15px;">Общее: ${dayTotal.toFixed(2)}€</span>
-            <span style="margin-right: 15px;">Картой: ${dayTotalCard.toFixed(2)}€</span>
-            <span>Наличными: ${dayTotalCash.toFixed(2)}€</span>
+          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">
+            <span style="margin-right: 15px;">ОБЩЕЕ: <span style="color: #34495e;">${dayTotal.toFixed(2)}€</span></span>
+            <span style="margin-right: 15px;">КАРТОЙ: <span style="color: #34495e;">${dayTotalCard.toFixed(2)}€</span></span>
+            <span>НАЛИЧНЫМИ: <span style="color: #34495e;">${dayTotalCash.toFixed(2)}€</span></span>
           </td>
+          <td colspan="2" style="padding: 8px;"></td>
         </tr>
       `;
 

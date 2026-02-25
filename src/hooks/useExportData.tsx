@@ -114,7 +114,6 @@ export function useExportData() {
           <tr class="entry-row">
             <td>${globalIndex}</td>
             <td>${entry.client_name || 'Без имени'}</td>
-            <td>${serviceCol}</td>
             <td>${methodCol}</td>
             <td class="price">${priceCol}</td>
             <td class="tips-cell">${cardTips > 0 ? `${cardTips.toFixed(2)}€` : '-'}</td>
@@ -495,7 +494,6 @@ export function useExportData() {
       <tr class="table-header">
         <th>№</th>
         <th>Клиент</th>
-        <th>Услуга</th>
         <th>Метод оплаты</th>
         <th>Цена</th>
         <th>Чаевые (Карта)</th>
@@ -503,23 +501,8 @@ export function useExportData() {
       </tr>
       
       <!-- Entry Rows -->
-      <!-- Entry Rows -->
+      <!-- Entries rows will come here -->
       ${tableRowsHtml}
-      
-      <!-- Total Row -->
-      <tr class="total-row">
-        <td colspan="5" class="total-label">ИТОГО:</td>
-        <td class="total-value">${(() => {
-        const servicesTotal = entries.reduce((sum, e) => {
-          const t = e.transaction_type || 'service';
-          if (t === 'debt_master_to_salon') return sum - e.price;
-          return sum + e.price;
-        }, 0);
-        const tipsTotal = entries.reduce((sum, e) => e.tips > 0 && e.tips_payment_method === 'card' ? sum + e.tips : sum, 0);
-        return (servicesTotal + tipsTotal).toFixed(2);
-      })()}€</td>
-        <td></td>
-      </tr>
       
     </tbody>
   </table>

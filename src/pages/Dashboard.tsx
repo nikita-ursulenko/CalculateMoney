@@ -13,7 +13,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useEntries } from '@/hooks/useEntries';
 import { useExportData } from '@/hooks/useExportData';
 import { useToast } from '@/hooks/use-toast';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
@@ -71,7 +71,7 @@ export default function Dashboard() {
   const { entries, loading: entriesLoading, deleteEntry } = useEntries(selectedDate);
   const { exportToPDF } = useExportData();
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin } = useWorkspace();
 
   const handleAddEntry = () => {
     const targetDate = selectedDate?.from || new Date();

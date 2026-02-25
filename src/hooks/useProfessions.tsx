@@ -1,29 +1,37 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWorkspace } from './useWorkspace';
 
 export interface Profession {
     id: string;
     name: string;
+    workspace_id: string;
     created_at: string;
 }
 
 export function useProfessions() {
+    const { activeWorkspace } = useWorkspace();
     const [professions, setProfessions] = useState<Profession[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchProfessions = async () => {
+        if (!activeWorkspace?.workspace_id) {
+            setProfessions([]);
+            setLoading(false);
+            return;
+        }
+
         try {
-            // @ts-ignore
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('professions')
                 .select('*')
+                .eq('workspace_id', activeWorkspace.workspace_id)
                 .order('name', { ascending: true });
 
             if (error) throw error;
-            setProfessions(data || []);
+            setProfessions((data as any) || []);
         } catch (error) {
             console.error('Error fetching professions:', error);
-            // Fallback for development if table not created yet
             setProfessions([]);
         } finally {
             setLoading(false);
@@ -31,11 +39,12 @@ export function useProfessions() {
     };
 
     const addProfession = async (name: string) => {
+        if (!activeWorkspace?.workspace_id) return { data: null, error: new Error('No workspace') };
+
         try {
-            // @ts-ignore
-            const { data, error } = await supabase
+            const { data, error } = await (supabase as any)
                 .from('professions')
-                .insert([{ name }])
+                .insert([{ name, workspace_id: activeWorkspace.workspace_id }])
                 .select()
                 .single();
 
@@ -51,8 +60,7 @@ export function useProfessions() {
 
     const deleteProfession = async (id: string) => {
         try {
-            // @ts-ignore
-            const { error } = await supabase
+            const { error } = await (supabase as any)
                 .from('professions')
                 .delete()
                 .eq('id', id);
@@ -69,7 +77,7 @@ export function useProfessions() {
 
     useEffect(() => {
         fetchProfessions();
-    }, []);
+    }, [activeWorkspace?.workspace_id]);
 
     return {
         professions,

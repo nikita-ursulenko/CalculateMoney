@@ -4,8 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { WorkspaceProvider } from "@/hooks/useWorkspace";
+import { WorkspaceProvider, useWorkspace } from "@/hooks/useWorkspace";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import AddEntry from "./pages/AddEntry";
@@ -13,6 +12,7 @@ import SettingsPage from "./pages/SettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAddEntry from "./pages/AdminAddEntry";
 import AdminCalendar from "@/pages/AdminCalendar";
+import AdminTeam from "./pages/AdminTeam";
 import CalendarPage from "./pages/CalendarPage";
 import ServicesPage from "./pages/ServicesPage";
 import ClientsPage from "./pages/ClientsPage";
@@ -43,7 +43,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading } = useWorkspace();
 
   if (loading || roleLoading) {
     return (
@@ -63,7 +63,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading } = useWorkspace();
 
   if (loading || roleLoading) {
     return (
@@ -80,6 +80,24 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
+
+  return <>{children}</>;
+}
+
+function ModeratorRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { isAdmin, isModerator, loading: roleLoading } = useWorkspace();
+
+  if (loading || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/" replace />;
+  if (!isAdmin && !isModerator) return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 }
@@ -158,6 +176,16 @@ function AppRoutes() {
             }
           />
           <Route
+            path="/admin/team"
+            element={
+              <AdminRoute>
+                <PageWrapper custom={direction}>
+                  <AdminTeam />
+                </PageWrapper>
+              </AdminRoute>
+            }
+          />
+          <Route
             path="/admin/add"
             element={
               <AdminRoute>
@@ -210,11 +238,11 @@ function AppRoutes() {
           <Route
             path="/clients"
             element={
-              <AdminRoute>
+              <ModeratorRoute>
                 <PageWrapper custom={direction}>
                   <ClientsPage />
                 </PageWrapper>
-              </AdminRoute>
+              </ModeratorRoute>
             }
           />
           <Route path="*" element={<NotFound />} />

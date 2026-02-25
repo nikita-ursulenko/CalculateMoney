@@ -25,15 +25,31 @@ CREATE TABLE IF NOT EXISTS public.workspace_members (
 ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
 
+-- 1. Create helper functions that bypass RLS to prevent recursion
+CREATE OR REPLACE FUNCTION public.get_user_workspace_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_user_admin_workspace_ids()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid() AND role = 'admin';
+$$;
+
 -- Workspaces Policies
 -- Users can view workspaces they are members of
 CREATE POLICY "Users can view their workspaces" ON public.workspaces
     FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.workspace_members
-            WHERE workspace_members.workspace_id = id
-            AND workspace_members.user_id = auth.uid()
-        )
+        id IN (SELECT public.get_user_workspace_ids())
+        OR owner_id = auth.uid()
     );
 
 -- Workspace owner can fully manage it
@@ -44,28 +60,15 @@ CREATE POLICY "Owners can manage workspaces" ON public.workspaces
 -- Users can view members of their workspaces
 CREATE POLICY "Users can view members of their workspaces" ON public.workspace_members
     FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.workspace_members wm
-            WHERE wm.workspace_id = workspace_id
-            AND wm.user_id = auth.uid()
-        )
+        user_id = auth.uid() OR workspace_id IN (SELECT public.get_user_workspace_ids())
     );
 
 -- Workspace admins or owners can manage members
 CREATE POLICY "Admins can manage workspace members" ON public.workspace_members
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.workspace_members wm
-            WHERE wm.workspace_id = workspace_id
-            AND wm.user_id = auth.uid()
-            AND wm.role = 'admin'
-        )
+        workspace_id IN (SELECT public.get_user_admin_workspace_ids())
         OR 
-        EXISTS (
-            SELECT 1 FROM public.workspaces w
-            WHERE w.id = workspace_id
-            AND w.owner_id = auth.uid()
-        )
+        workspace_id IN (SELECT id FROM public.workspaces WHERE owner_id = auth.uid())
     );
 
 -- Helper to update updated_at

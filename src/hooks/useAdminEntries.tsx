@@ -135,9 +135,13 @@ export function useAdminEntries(selectedMasterId: string | null, selectedDate?: 
     });
   };
 
+  const dateDep = selectedDate instanceof Date
+    ? selectedDate.getTime().toString()
+    : `${(selectedDate as DateRange)?.from?.getTime() || 0}-${(selectedDate as DateRange)?.to?.getTime() || 0}`;
+
   useEffect(() => {
     fetchEntries();
-  }, [user, selectedMasterId, selectedDate]);
+  }, [user?.id, selectedMasterId, dateDep]);
 
   return { entries, loading, addEntry, deleteEntry, updateEntry, checkOverlap, refetch: fetchEntries };
 }

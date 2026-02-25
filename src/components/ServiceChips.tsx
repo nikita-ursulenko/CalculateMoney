@@ -23,6 +23,12 @@ export function ServiceChips({ selected, onChange, userId }: ServiceChipsProps) 
 
   const selectedServices = selected ? selected.split(',').map(s => s.trim()).filter(Boolean) : [];
 
+  // Helper to generate a unique label if service names are duplicated across categories
+  const getServiceLabel = (service: any) => {
+    const isDuplicate = services.some(s => s.name === service.name && s.id !== service.id);
+    return isDuplicate ? `${service.name} (${service.category || 'Без категории'})` : service.name;
+  };
+
   const toggleService = (name: string) => {
     if (selectedServices.includes(name)) {
       const newSelected = selectedServices.filter(s => s !== name);
@@ -98,12 +104,13 @@ export function ServiceChips({ selected, onChange, userId }: ServiceChipsProps) 
                   {services
                     .filter(s => (s.category || 'Без категории') === category)
                     .map((service) => {
-                      const isSelected = selectedServices.includes(service.name);
+                      const label = getServiceLabel(service);
+                      const isSelected = selectedServices.includes(label);
                       return (
                         <button
                           key={service.id}
                           type="button"
-                          onClick={() => toggleService(service.name)}
+                          onClick={() => toggleService(label)}
                           className={cn(
                             'w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 border border-transparent group',
                             isSelected

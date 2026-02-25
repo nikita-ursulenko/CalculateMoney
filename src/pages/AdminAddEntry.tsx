@@ -13,7 +13,7 @@ import { useMasters } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useClients } from '@/hooks/useClients';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminAddEntry() {
@@ -22,7 +22,7 @@ export default function AdminAddEntry() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { masters } = useMasters();
-  const { isAdmin } = useUserRole();
+  const { isAdmin } = useWorkspace();
 
   // Get master and date from URL or state
   const [masterId, setMasterId] = useState<string | null>(searchParams.get('master'));

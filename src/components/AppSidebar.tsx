@@ -1,4 +1,4 @@
-import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User, ChevronsUpDown, Check } from "lucide-react";
+import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User, ChevronsUpDown, Check, UserCog } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -31,7 +31,7 @@ export function AppSidebar() {
     const location = useLocation();
     const { setOpenMobile } = useSidebar();
 
-    const { activeWorkspace, workspaces, setActiveWorkspace, isAdmin } = useWorkspace();
+    const { activeWorkspace, workspaces, setActiveWorkspace, isAdmin, isModerator, canViewAdminCalendar, canManageServices } = useWorkspace();
     const { settings } = useSettings();
     const { signOut } = useAuth();
 
@@ -47,11 +47,13 @@ export function AppSidebar() {
         { title: "Настройки", icon: Settings, path: "/settings" },
     ];
 
+    // Admin gets all admin items. Moderator gets filtered based on permissions.
     const adminItems = [
-        { title: "Главная", icon: Shield, path: "/admin" },
-        { title: "Клиенты", icon: Users, path: "/clients" },
-        { title: "Календарь", icon: Calendar, path: "/admin/calendar" },
-    ];
+        { title: "Главная", icon: Shield, path: "/admin", alwaysShow: false, adminOnly: true },
+        { title: "Команда", icon: UserCog, path: "/admin/team", alwaysShow: false, adminOnly: true },
+        { title: "Клиенты", icon: Users, path: "/clients", alwaysShow: true },
+        { title: "Календарь", icon: Calendar, path: "/admin/calendar", alwaysShow: false, permission: canViewAdminCalendar },
+    ].filter(item => isAdmin || item.alwaysShow || item.permission);
 
     return (
         <Sidebar className="border-r border-border/50 bg-sidebar/50 backdrop-blur-xl">
@@ -70,7 +72,7 @@ export function AppSidebar() {
                                     {activeWorkspace?.workspace?.name || 'Загрузка...'}
                                 </span>
                                 <span className="truncate text-[10px] text-muted-foreground uppercase tracking-widest">
-                                    {isAdmin ? 'Администратор' : (settings?.master_profession || 'Мастер')}
+                                    {isAdmin ? 'Администратор' : isModerator ? 'Модератор' : (settings?.master_profession || 'Мастер')}
                                 </span>
                             </div>
                             <ChevronsUpDown className="ml-auto size-4" />
@@ -132,7 +134,7 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                {isAdmin && (
+                {(isAdmin || isModerator) && (
                     <SidebarGroup className="mt-4">
                         <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Администрирование</SidebarGroupLabel>
                         <SidebarGroupContent>

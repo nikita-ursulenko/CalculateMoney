@@ -26,11 +26,12 @@ import {
     AlertDialogTitle as AlertDialogTitleComp,
 } from "@/components/ui/alert-dialog";
 import { useClients, Client } from '@/hooks/useClients';
-import { useUserRole } from "@/hooks/useUserRole";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function ClientsPage() {
     const { clients, loading, addClient, updateClient, deleteClient } = useClients();
-    const { isAdmin } = useUserRole();
+    const { canManageClients } = useWorkspace();
+    const isAdmin = canManageClients; // allow moderators with manage_clients permission
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);

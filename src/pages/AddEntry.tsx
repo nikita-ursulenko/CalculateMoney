@@ -12,7 +12,7 @@ import { PaymentTabs } from '@/components/PaymentTabs';
 import { useEntries } from '@/hooks/useEntries';
 import { useToast } from '@/hooks/use-toast';
 
-import { useUserRole } from '@/hooks/useUserRole';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useClients } from '@/hooks/useClients';
 
 export default function AddEntry() {
@@ -26,7 +26,7 @@ export default function AddEntry() {
   const navigate = useNavigate();
   const { addEntry, updateEntry, checkOverlap } = useEntries();
   const { toast } = useToast();
-  const { isAdmin } = useUserRole();
+  const { isAdmin } = useWorkspace();
 
   const [service, setService] = useState('');
   const [price, setPrice] = useState('');

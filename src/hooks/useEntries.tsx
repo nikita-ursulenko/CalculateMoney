@@ -178,9 +178,13 @@ export function useEntries(selectedDate?: Date | DateRange) {
     });
   };
 
+  const dateDep = selectedDate instanceof Date
+    ? selectedDate.getTime().toString()
+    : `${(selectedDate as DateRange)?.from?.getTime() || 0}-${(selectedDate as DateRange)?.to?.getTime() || 0}`;
+
   useEffect(() => {
     fetchEntries();
-  }, [user, activeWorkspace?.workspace_id, selectedDate]);
+  }, [user?.id, activeWorkspace?.workspace_id, dateDep]);
 
   return { entries, loading, addEntry, deleteEntry, updateEntry, checkOverlap, refetch: fetchEntries };
 }

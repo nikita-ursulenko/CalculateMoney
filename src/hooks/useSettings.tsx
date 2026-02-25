@@ -33,14 +33,43 @@ export function useSettings() {
         .from('settings')
         .select('*')
         .eq('workspace_id', activeWorkspace.workspace_id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
-      const dataWithDefaults = data as any;
-      setSettings({
-        ...dataWithDefaults,
-        master_profession: dataWithDefaults?.master_profession || ''
-      });
+
+      if (!data) {
+        // Create default settings row if it doesn't exist for this user in this workspace
+        const newSettings = {
+          user_id: user.id,
+          workspace_id: activeWorkspace.workspace_id,
+          use_different_rates: false,
+          rate_general: 40,
+          rate_cash: 40,
+          rate_card: 40,
+          master_name: user?.user_metadata?.name || '',
+          master_profession: ''
+        };
+
+        const { data: insertedData, error: insertError } = await (supabase as any)
+          .from('settings')
+          .insert(newSettings)
+          .select()
+          .single();
+
+        if (!insertError && insertedData) {
+          setSettings(insertedData);
+        } else {
+          console.error("useSettings insert default error:", insertError);
+          setSettings(null);
+        }
+      } else {
+        const dataWithDefaults = data as any;
+        setSettings({
+          ...dataWithDefaults,
+          master_profession: dataWithDefaults?.master_profession || ''
+        });
+      }
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -55,14 +84,18 @@ export function useSettings() {
       const { error } = await (supabase as any)
         .from('settings')
         .update(updates)
-        .eq('workspace_id', activeWorkspace.workspace_id);
+        .eq('workspace_id', activeWorkspace.workspace_id)
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("useSettings update error from supabase:", error);
+        throw error;
+      }
 
       setSettings({ ...settings, ...updates });
       return { error: null };
     } catch (error) {
-      console.error('Error updating settings:', error);
+      console.error('Error updating settings caught:', error);
       return { error };
     }
   };

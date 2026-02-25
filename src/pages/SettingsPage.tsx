@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Loader2, Save, TrendingUp, Plus, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, LogOut, Loader2, Save, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,23 +16,33 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useProfessions } from '@/hooks/useProfessions';
-import { useWorkspaceMembers } from '@/hooks/useWorkspaceMembers';
-
 import { useWorkspace } from '@/hooks/useWorkspace';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { settings, loading: settingsLoading, updateSettings } = useSettings();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { isAdmin, activeWorkspace } = useWorkspace();
-  const { professions, addProfession, deleteProfession } = useProfessions();
-  const { members, updateMemberPermissions, removeMember } = useWorkspaceMembers();
+  const { isAdmin, activeWorkspace, refreshWorkspaces } = useWorkspace();
+  const { professions } = useProfessions();
 
   const [masterName, setMasterName] = useState('');
   const [masterProfession, setMasterProfession] = useState('');
-  const [newProfession, setNewProfession] = useState('');
+  const [salonName, setSalonName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyEmail = () => {
+    if (user?.email) {
+      navigator.clipboard.writeText(user.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({
+        title: 'Копия создана',
+        description: 'Email скопирован в буфер обмена',
+      });
+    }
+  };
 
   useEffect(() => {
     if (settings) {
@@ -41,34 +51,42 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const handleAddProfession = async () => {
-    if (!newProfession.trim()) return;
+  useEffect(() => {
+    if (activeWorkspace?.workspace?.name) {
+      setSalonName(activeWorkspace.workspace.name);
+    }
+  }, [activeWorkspace?.workspace?.name]);
 
-    await addProfession(newProfession.trim());
-    setNewProfession('');
-    toast({
-      title: 'Успешно',
-      description: 'Профессия добавлена',
-    });
-  };
 
-  const handleDeleteProfession = async (id: string) => {
-    await deleteProfession(id);
-    toast({
-      title: 'Успешно',
-      description: 'Профессия удалена',
-    });
-  };
 
   const handleSave = async () => {
     setSaving(true);
+    let hasError = false;
 
-    const { error } = await updateSettings({
+    // 1. Admin saves salon name
+    if (isAdmin && salonName !== activeWorkspace?.workspace?.name) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase
+        .from('workspaces')
+        .update({ name: salonName })
+        .eq('id', activeWorkspace?.workspace_id);
+
+      if (error) {
+        hasError = true;
+      } else {
+        refreshWorkspaces?.();
+      }
+    }
+
+    // 2. ALL roles (including admins) save their personal master profile
+    const { error: profileError } = await updateSettings({
       master_name: masterName,
       master_profession: masterProfession,
     });
 
-    if (error) {
+    if (profileError) hasError = true;
+
+    if (hasError) {
       toast({
         title: 'Ошибка',
         description: 'Не удалось сохранить настройки',
@@ -115,131 +133,85 @@ export default function SettingsPage() {
       </header>
 
       <div className="px-5 space-y-4 animate-slide-up">
-        {/* Master Name */}
-        <div className="space-y-1.5 animate-fade-in">
-          <Label htmlFor="masterName" className="text-sm font-medium">
-            Имя мастера
-          </Label>
-          <Input
-            id="masterName"
-            type="text"
-            placeholder="Как вас зовут?"
-            value={masterName}
-            onChange={(e) => setMasterName(e.target.value)}
-            className="input-beauty h-12"
-          />
-        </div>
-
-        {/* Master Profession Selection */}
-        <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <Label htmlFor="masterProfession" className="text-sm font-medium">
-            Профессия / Специализация
-          </Label>
-          <Select value={masterProfession} onValueChange={setMasterProfession}>
-            <SelectTrigger className="w-full h-12 input-beauty">
-              <SelectValue placeholder="Выберите специализацию" />
-            </SelectTrigger>
-            <SelectContent>
-              {professions.map((prof) => (
-                <SelectItem key={prof.id} value={prof.name}>
-                  {prof.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Admin Section: Team Management */}
         {isAdmin && (
-          <div className="pt-4 border-t border-border/50 animate-fade-in" style={{ animationDelay: '0.12s' }}>
-            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-              <Users size={14} />
-              Команда Салона
-            </h3>
-
-            <div className="space-y-3">
-              {members.map((member) => (
-                <div key={member.user_id} className="p-3 rounded-xl bg-secondary/50 border border-border/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">
-                        {member.settings?.master_name || 'Неизвестный мастер'}
-                        {member.user_id === activeWorkspace?.user_id && ' (Вы)'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {member.settings?.master_profession || 'Специалист'} • {member.role === 'admin' ? 'Админ' : 'Мастер'}
-                      </p>
-                    </div>
-                    {member.user_id !== activeWorkspace?.user_id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeMember(member.user_id)}
-                        className="text-muted-foreground hover:text-destructive h-8 w-8"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    )}
-                  </div>
-
-                  {member.role !== 'admin' && (
-                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                      <Label className="text-xs text-muted-foreground">Управление клиентами</Label>
-                      <Switch
-                        checked={member.manage_clients}
-                        onCheckedChange={(checked) => updateMemberPermissions(member.user_id, { manage_clients: checked })}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+          // Admin View: Edit Salon info
+          <div className="space-y-1.5 animate-fade-in mb-6 pb-6 border-b border-border/50">
+            <Label htmlFor="salonName" className="text-sm font-medium flex items-center gap-2">
+              Название салона
+            </Label>
+            <Input
+              id="salonName"
+              type="text"
+              placeholder="Введите название салона..."
+              value={salonName}
+              onChange={(e) => setSalonName(e.target.value)}
+              className="input-beauty h-12 text-base font-semibold"
+            />
           </div>
         )}
 
-        {/* Admin Section: Manage Professions */}
-        {isAdmin && (
-          <div className="pt-4 border-t border-border/50 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-              <TrendingUp size={14} />
-              Справочник профессий
-            </h3>
+        {/* Master View: Edit Personal profile (shown for everyone) */}
+        <>
+          <div className="space-y-1.5 animate-fade-in">
+            <Label htmlFor="masterName" className="text-sm font-medium">
+              Имя мастера
+            </Label>
+            <Input
+              id="masterName"
+              type="text"
+              placeholder="Как вас зовут?"
+              value={masterName}
+              onChange={(e) => setMasterName(e.target.value)}
+              className="input-beauty h-12"
+            />
+          </div>
 
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Новая профессия..."
-                  className="h-10 text-sm"
-                  value={newProfession}
-                  onChange={(e) => setNewProfession(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddProfession()}
-                />
+          <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <Label htmlFor="masterProfession" className="text-sm font-medium">
+              Профессия / Специализация
+            </Label>
+            <Select value={masterProfession} onValueChange={setMasterProfession}>
+              <SelectTrigger className="w-full h-12 input-beauty">
+                <SelectValue placeholder="Выберите специализацию" />
+              </SelectTrigger>
+              <SelectContent>
+                {professions.map((prof) => (
+                  <SelectItem key={prof.id} value={prof.name}>
+                    {prof.name}
+                  </SelectItem>
+                ))}
+                {professions.length === 0 && (
+                  <SelectItem value="Мастер">Мастер</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Email info block */}
+          <div className="pt-2 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
+              <Label className="text-sm font-medium text-foreground mb-1 block">
+                Ваш Email
+              </Label>
+              <div className="flex items-center justify-between">
+                <div className="text-base font-semibold text-primary mb-2">
+                  {user?.email}
+                </div>
                 <Button
-                  size="sm"
-                  className="h-10 px-4"
-                  onClick={handleAddProfession}
-                  disabled={!newProfession.trim()}
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyEmail}
+                  className="h-8 w-8 text-muted-foreground hover:text-primary mb-2 transition-colors duration-200"
                 >
-                  <Plus size={18} />
+                  {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                 </Button>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {professions.map((prof) => (
-                  <div key={prof.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50 border border-border/50 text-xs font-medium">
-                    <span>{prof.name}</span>
-                    <button
-                      onClick={() => handleDeleteProfession(prof.id)}
-                      className="text-muted-foreground hover:text-destructive p-1 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                По этому email адресу администраторы других салонов могут выслать вам приглашение для присоединения к их команде.
+              </p>
             </div>
           </div>
-        )}
+        </>
 
         {/* Save Button */}
         <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>

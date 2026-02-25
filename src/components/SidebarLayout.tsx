@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-import { useUserRole } from "@/hooks/useUserRole";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
+import OnboardingScreen from "./OnboardingScreen";
 
 interface SidebarLayoutProps {
     children: React.ReactNode;
@@ -22,11 +24,17 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         return <>{children}</>;
     }
 
-    const { isAdmin } = useUserRole();
+    const { isAdmin, isModerator, canManageClients, activeWorkspace, loading: workspaceLoading } = useWorkspace();
+    const { user } = useAuth();
+
+    // If logged in but has no workspace yet — show onboarding
+    if (user && !workspaceLoading && !activeWorkspace && location.pathname !== '/') {
+        return <OnboardingScreen />;
+    }
     const isAddPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
 
-    // Non-admins cannot add clients
-    const canAddClient = isAdmin;
+    // Non-admins without manage_clients permission cannot add clients
+    const canAddClient = canManageClients;
 
     const showPlusButton = location.pathname === '/dashboard' ||
         location.pathname === '/admin' ||

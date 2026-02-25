@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Loader2, Save, Copy, Check } from 'lucide-react';
+import { ArrowLeft, LogOut, Loader2, Save, Copy, Check, Moon, Sun, Monitor } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const { isAdmin, activeWorkspace, refreshWorkspaces } = useWorkspace();
   const { professions } = useProfessions();
+  const { theme, setTheme } = useTheme();
 
   const [masterName, setMasterName] = useState('');
   const [masterProfession, setMasterProfession] = useState('');
@@ -209,6 +211,40 @@ export default function SettingsPage() {
               <p className="text-[11px] text-muted-foreground leading-snug">
                 По этому email адресу администраторы других салонов могут выслать вам приглашение для присоединения к их команде.
               </p>
+            </div>
+          </div>
+
+          {/* Theme Settings */}
+          <div className="pt-2 animate-fade-in" style={{ animationDelay: '0.18s' }}>
+            <Label className="text-sm font-medium mb-2 block">Внешний вид</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${theme === 'light' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-secondary text-muted-foreground hover:bg-secondary/80'
+                  }`}
+              >
+                <Sun size={20} className="mb-2" />
+                <span className="text-xs font-medium">Светлая</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${theme === 'dark' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-secondary text-muted-foreground hover:bg-secondary/80'
+                  }`}
+              >
+                <Moon size={20} className="mb-2" />
+                <span className="text-xs font-medium">Тёмная</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('system')}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${theme === 'system' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-secondary text-muted-foreground hover:bg-secondary/80'
+                  }`}
+              >
+                <Monitor size={20} className="mb-2" />
+                <span className="text-xs font-medium">Системная</span>
+              </button>
             </div>
           </div>
         </>

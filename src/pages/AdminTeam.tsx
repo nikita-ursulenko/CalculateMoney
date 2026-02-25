@@ -292,7 +292,7 @@ export default function AdminTeam() {
 
             {/* Member Settings Modal */}
             <Dialog open={!!selectedMember} onOpenChange={(open) => !open && setSelectedMember(null)}>
-                <DialogContent className="sm:max-w-sm rounded-3xl border-none shadow-2xl p-6">
+                <DialogContent className="w-[95vw] max-w-[400px] sm:w-[400px] rounded-3xl border-none shadow-2xl p-6 transition-all duration-300">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black">
                             {members.find(m => m.user_id === selectedMember)?.settings?.master_name || 'Настройки участника'}
@@ -302,28 +302,7 @@ export default function AdminTeam() {
                     {modalSettings && (
                         <div className="space-y-5 mt-2">
 
-                            {/* Role selector */}
-                            <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Роль</Label>
-                                <Select
-                                    value={modalSettings.role}
-                                    onValueChange={(v) => setModalSettings(prev => prev ? { ...prev, role: v as MemberRole } : prev)}
-                                >
-                                    <SelectTrigger className="h-11 rounded-xl">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="master">Мастер</SelectItem>
-                                        <SelectItem value="moderator">Модератор</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {modalSettings.role === 'moderator' && (
-                                    <p className="text-[10px] text-amber-500">
-                                        Модератор видит раздел "Администрирование" и имеет доступ к выбранным функциям ниже.
-                                    </p>
-                                )}
-                            </div>
-
+                            {/* Role selector removed - dynamic based on permissions */}
                             {/* Percent_type Mode Box */}
                             <div className="space-y-4 p-4 rounded-xl border border-border/50 bg-secondary/30">
                                 <div className="flex items-center justify-between">
@@ -419,7 +398,13 @@ export default function AdminTeam() {
                                         <Switch
                                             checked={(modalSettings as any)[key]}
                                             onCheckedChange={(checked) =>
-                                                setModalSettings(prev => prev ? { ...prev, [key]: checked } : prev)
+                                                setModalSettings(prev => {
+                                                    if (!prev) return prev;
+                                                    const updated = { ...prev, [key]: checked };
+                                                    const hasPerms = updated.manage_clients || updated.manage_entries || updated.view_admin_calendar || updated.manage_services;
+                                                    updated.role = hasPerms ? 'moderator' : 'master';
+                                                    return updated;
+                                                })
                                             }
                                         />
                                     </div>

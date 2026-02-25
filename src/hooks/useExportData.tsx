@@ -154,19 +154,19 @@ export function useExportData() {
       const totalsRow = `
         <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
           <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ОБЩЕЕ ДАННЫЕ ЗА ДЕНЬ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; border-bottom: 0;">
+          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; ">
             ${dayTotal.toFixed(2)}€
           </td>
         </tr>
         <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
           <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ИЗ НИХ КАРТОЙ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; border-bottom: 0; border-top: 0;">
+          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; ">
             ${dayTotalCard.toFixed(2)}€
           </td>
         </tr>
         <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
           <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ИЗ НИХ НАЛИЧНЫМИ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; border-top: 0;">
+          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7">
             ${dayTotalCash.toFixed(2)}€
           </td>
         </tr>

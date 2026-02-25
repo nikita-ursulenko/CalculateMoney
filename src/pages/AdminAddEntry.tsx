@@ -31,6 +31,7 @@ export default function AdminAddEntry() {
   );
 
   const selectedMaster = masters.find(m => m.user_id === masterId);
+  const isIndividualPercent = selectedMaster?.percent_type === 'individual';
 
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
@@ -146,6 +147,16 @@ export default function AdminAddEntry() {
       toast({
         title: 'Ошибка',
         description: 'Выберите способ оплаты чаевых',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate individual percentage
+    if (transactionType === 'service' && isIndividualPercent && !masterRevenueShare) {
+      toast({
+        title: 'Ошибка',
+        description: 'Укажите индивидуальный процент для этого мастера',
         variant: 'destructive',
       });
       return;
@@ -527,18 +538,27 @@ export default function AdminAddEntry() {
         {transactionType === 'service' && isAdmin && (
           <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <Label htmlFor="masterShare" className="text-sm font-bold text-primary flex items-center gap-2">
-              <Euro size={14} /> Изменить % мастера для этой записи
+              <Euro size={14} /> {isIndividualPercent ? 'Процент за запись' : 'Изменить % мастера для этой записи'}
             </Label>
             <Input
               id="masterShare"
               type="number"
               min="0"
               max="100"
-              placeholder="Оставьте пустым для стандарта или % клиента"
+              placeholder={isIndividualPercent ? "Введите процент (%)" : "Оставьте пустым для стандарта или % клиента"}
               value={masterRevenueShare}
               onChange={(e) => setMasterRevenueShare(e.target.value)}
-              className="h-12 border-primary/20 bg-primary/5 focus-visible:ring-primary/30"
+              className={cn(
+                "h-12 focus-visible:ring-primary/30",
+                isIndividualPercent ? "border-amber-400 bg-amber-50/30" : "border-primary/20 bg-primary/5"
+              )}
+              required={isIndividualPercent!}
             />
+            {isIndividualPercent && (
+              <p className="text-[10px] text-amber-600 font-medium ml-1">
+                Для этого мастера установлен ручной ввод процента.
+              </p>
+            )}
           </div>
         )}
 

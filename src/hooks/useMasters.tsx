@@ -11,6 +11,7 @@ export interface Master {
   rate_cash: number;
   rate_card: number;
   use_different_rates: boolean;
+  percent_type: 'global' | 'individual';
 }
 
 export function useMasters() {
@@ -47,7 +48,7 @@ export function useMasters() {
         // Step 2: fetch settings for those user IDs (admin RLS policy allows this)
         const { data: settingsData, error: settingsError } = await (supabase as any)
           .from('settings')
-          .select('user_id, master_name, master_profession, rate_general, rate_cash, rate_card, use_different_rates')
+          .select('user_id, master_name, master_profession, rate_general, rate_cash, rate_card, use_different_rates, percent_type')
           .eq('workspace_id', activeWorkspace.workspace_id)
           .in('user_id', userIds);
 
@@ -68,6 +69,7 @@ export function useMasters() {
             rate_cash: Number(s.rate_cash ?? 40),
             rate_card: Number(s.rate_card ?? 40),
             use_different_rates: s.use_different_rates ?? false,
+            percent_type: s.percent_type ?? 'global',
           };
         }));
       } catch (error) {

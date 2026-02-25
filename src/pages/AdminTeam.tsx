@@ -35,6 +35,7 @@ interface MemberSettings {
     rate_general: number;
     rate_cash: number;
     rate_card: number;
+    percent_type: 'global' | 'individual';
 }
 
 export default function AdminTeam() {
@@ -87,6 +88,7 @@ export default function AdminTeam() {
             rate_general: member.settings?.rate_general ?? 40,
             rate_cash: (member.settings as any)?.rate_cash ?? 40,
             rate_card: (member.settings as any)?.rate_card ?? 40,
+            percent_type: (member.settings as any)?.percent_type ?? 'global',
         });
     };
 
@@ -107,6 +109,7 @@ export default function AdminTeam() {
                 rate_general: modalSettings.rate_general,
                 rate_cash: modalSettings.rate_cash,
                 rate_card: modalSettings.rate_card,
+                percent_type: modalSettings.percent_type,
             }),
         ]);
 
@@ -321,54 +324,79 @@ export default function AdminTeam() {
                                 )}
                             </div>
 
-                            {/* Percentages: with toggle for split rates */}
-                            <div className="space-y-2">
+                            {/* Percent_type Mode Box */}
+                            <div className="space-y-4 p-4 rounded-xl border border-border/50 bg-secondary/30">
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-1">
-                                        <Percent size={10} /> Процент от выручки
-                                    </Label>
+                                    <div>
+                                        <Label className="text-sm font-medium">Способ расчета ЗП</Label>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                            {modalSettings.percent_type === 'global' ? 'Единый для всех клиентов' : 'Задается вручную при создании записи'}
+                                        </p>
+                                    </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-muted-foreground">Раздельный</span>
+                                        <span className="text-[10px] font-medium text-muted-foreground">Общий</span>
                                         <Switch
-                                            checked={modalSettings.use_different_rates}
-                                            onCheckedChange={(v) => setModalSettings(prev => prev ? { ...prev, use_different_rates: v } : prev)}
+                                            checked={modalSettings.percent_type === 'individual'}
+                                            onCheckedChange={(v) => setModalSettings(prev => prev ? { ...prev, percent_type: v ? 'individual' : 'global' } : prev)}
                                         />
+                                        <span className="text-[10px] font-medium text-muted-foreground">Индивид.</span>
                                     </div>
                                 </div>
 
-                                {modalSettings.use_different_rates ? (
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { key: 'rate_cash', label: 'Наличные' },
-                                            { key: 'rate_card', label: 'Карта' },
-                                        ].map(({ key, label }) => (
-                                            <div key={key} className="space-y-1">
-                                                <p className="text-[10px] text-muted-foreground text-center">{label}</p>
-                                                <div className="flex items-center">
+                                {modalSettings.percent_type === 'global' ? (
+                                    <div className="space-y-2 pt-2 border-t border-border/50">
+                                        <div className="flex items-center justify-between mt-2">
+                                            <Label className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-1">
+                                                <Percent size={10} /> Раздельный процент
+                                            </Label>
+                                            <Switch
+                                                checked={modalSettings.use_different_rates}
+                                                onCheckedChange={(v) => setModalSettings(prev => prev ? { ...prev, use_different_rates: v } : prev)}
+                                            />
+                                        </div>
+
+                                        {modalSettings.use_different_rates ? (
+                                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                                {[
+                                                    { key: 'rate_cash', label: 'Наличные' },
+                                                    { key: 'rate_card', label: 'Карта' },
+                                                ].map(({ key, label }) => (
+                                                    <div key={key} className="space-y-1">
+                                                        <Label className="text-[10px] text-muted-foreground ml-1">{label}</Label>
+                                                        <div className="flex items-center relative">
+                                                            <Input
+                                                                type="number" min={0} max={100}
+                                                                value={(modalSettings as any)[key]}
+                                                                onChange={(e) => setModalSettings(prev => prev ? { ...prev, [key]: Number(e.target.value) } : prev)}
+                                                                className="h-10 text-sm font-medium pr-7 bg-background"
+                                                            />
+                                                            <Percent size={12} className="absolute right-3 text-muted-foreground" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
                                                     <Input
                                                         type="number" min={0} max={100}
-                                                        value={(modalSettings as any)[key]}
-                                                        onChange={(e) => setModalSettings(prev => prev ? { ...prev, [key]: Number(e.target.value) } : prev)}
-                                                        className="h-10 font-bold text-center text-base px-1"
+                                                        value={modalSettings.rate_general}
+                                                        onChange={(e) => setModalSettings(prev => prev ? { ...prev, rate_general: Number(e.target.value) } : prev)}
+                                                        className="w-24 h-11 text-base font-semibold text-center bg-background"
                                                     />
-                                                    <span className="text-xs text-muted-foreground ml-0.5">%</span>
+                                                    <Percent size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                                 </div>
+                                                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                                    применяется ко всем оплатам
+                                                </span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-2">
-                                        <Input
-                                            type="number" min={0} max={100}
-                                            value={modalSettings.rate_general}
-                                            onChange={(e) => {
-                                                const v = Number(e.target.value);
-                                                setModalSettings(prev => prev ? { ...prev, rate_general: v, rate_cash: v, rate_card: v } : prev);
-                                            }}
-                                            className="h-11 w-28 font-bold text-center text-lg"
-                                        />
-                                        <span className="text-base text-muted-foreground">%</span>
-                                        <span className="text-[10px] text-muted-foreground">применяется ко всем типам оплат</span>
+                                    <div className="pt-2 border-t border-border/50 space-y-1.5">
+                                        <p className="text-xs text-foreground bg-primary/10 p-3 rounded-lg border border-primary/20">
+                                            При добавлении нового визита для этого мастера, вы будете вручную указывать процент вознаграждения за конкретную запись.
+                                        </p>
                                     </div>
                                 )}
                             </div>

@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useClients } from '@/hooks/useClients';
+import { useSettings } from '@/hooks/useSettings';
+import { cn } from '@/lib/utils';
 
 export default function AddEntry() {
   const { id } = useParams();
@@ -46,6 +48,8 @@ export default function AddEntry() {
   const [masterRevenueShare, setMasterRevenueShare] = useState<string>('');
 
   const { clients } = useClients();
+  const { settings } = useSettings();
+  const isIndividualPercent = settings?.percent_type === 'individual';
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchClientQuery.toLowerCase()) ||
@@ -149,6 +153,15 @@ export default function AddEntry() {
       toast({
         title: 'Ошибка',
         description: 'Это время уже занято другой записью',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (transactionType === 'service' && isIndividualPercent && !masterRevenueShare) {
+      toast({
+        title: 'Ошибка',
+        description: 'Обязательно укажите ваш индивидуальный процент для этой записи',
         variant: 'destructive',
       });
       return;
@@ -564,21 +577,30 @@ export default function AddEntry() {
         )}
 
         {/* Master Custom Percentage Override */}
-        {transactionType === 'service' && isAdmin && (
+        {transactionType === 'service' && (isAdmin || isIndividualPercent) && (
           <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <Label htmlFor="masterShare" className="text-sm font-bold text-primary flex items-center gap-2">
-              <Euro size={14} /> Индивидуальный процент мастера
+              <Euro size={14} /> {isIndividualPercent ? 'Процент за запись' : 'Индивидуальный процент мастера'}
             </Label>
             <Input
               id="masterShare"
               type="number"
               min="0"
               max="100"
-              placeholder="Оставьте пустым для стандарта или % клиента"
+              placeholder={isIndividualPercent ? "Введите процент (%)" : "Оставьте пустым для стандарта или % клиента"}
               value={masterRevenueShare}
               onChange={(e) => setMasterRevenueShare(e.target.value)}
-              className="input-beauty h-12 border-primary/20 focus-visible:ring-primary/30"
+              className={cn(
+                "input-beauty h-12 focus-visible:ring-primary/30",
+                isIndividualPercent ? "border-amber-400 bg-amber-50/30" : "border-primary/20"
+              )}
+              required={isIndividualPercent}
             />
+            {isIndividualPercent && (
+              <p className="text-[10px] text-amber-600 font-medium ml-1">
+                Для вас установлен индивидуальный расчет. Процент обязателен.
+              </p>
+            )}
           </div>
         )}
 

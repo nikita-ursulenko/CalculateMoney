@@ -13,6 +13,7 @@ export interface Settings {
   rate_general: number;
   rate_cash: number;
   rate_card: number;
+  percent_type: 'global' | 'individual';
 }
 
 export function useSettings() {
@@ -47,6 +48,7 @@ export function useSettings() {
           rate_general: 40,
           rate_cash: 40,
           rate_card: 40,
+          percent_type: 'global',
           master_name: user?.user_metadata?.name || '',
           master_profession: ''
         };
@@ -67,7 +69,8 @@ export function useSettings() {
         const dataWithDefaults = data as any;
         setSettings({
           ...dataWithDefaults,
-          master_profession: dataWithDefaults?.master_profession || ''
+          master_profession: dataWithDefaults?.master_profession || '',
+          percent_type: dataWithDefaults?.percent_type || 'global',
         });
       }
     } catch (error) {

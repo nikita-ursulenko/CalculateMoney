@@ -24,6 +24,7 @@ export interface DetailedWorkspaceMember {
         rate_general?: number;
         rate_cash?: number;
         rate_card?: number;
+        percent_type?: 'global' | 'individual';
     };
 }
 
@@ -60,7 +61,7 @@ export function useWorkspaceMembers() {
             const userIds = memberData.map((m: any) => m.user_id);
             const { data: settingsData } = await (supabase as any)
                 .from('settings')
-                .select('user_id, master_name, master_profession, rate_general, rate_cash, rate_card')
+                .select('user_id, master_name, master_profession, rate_general, rate_cash, rate_card, percent_type, use_different_rates')
                 .eq('workspace_id', activeWorkspace.workspace_id)
                 .in('user_id', userIds);
 

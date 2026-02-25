@@ -1,5 +1,6 @@
 import { Home, Calendar, Settings, Shield, Plus, LogOut, Scissors, Users, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
     Sidebar,
     SidebarContent,
@@ -24,6 +25,7 @@ export function AppSidebar() {
     const { setOpenMobile } = useSidebar();
     const { isAdmin } = useUserRole();
     const { settings } = useSettings();
+    const { signOut } = useAuth();
 
     const handleNavigate = (path: string) => {
         navigate(path);
@@ -116,7 +118,10 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             className="rounded-xl h-11 px-4 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
-                            onClick={() => {/* Logout logic would go here */ }}
+                            onClick={async () => {
+                                await signOut();
+                                navigate('/login');
+                            }}
                         >
                             <LogOut size={20} />
                             <span className="ml-2">Выйти</span>

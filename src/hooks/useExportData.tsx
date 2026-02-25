@@ -143,32 +143,22 @@ export function useExportData() {
       const dayTotal = dayTotalService + dayTotalTips;
 
       const summaryRow = `
-        <tr class="daily-summary-row" style="background-color: #f1f2f6; border-top: 1px solid #bdc3c7; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">${label}</td>
-          <td colspan="3" style="font-weight: bold; color: ${color}; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7;">
-             ${sign}${Math.abs(dayBalance).toFixed(2)}€
+        <tr class="daily-summary-row" style="page-break-inside: avoid;">
+          <td colspan="4" style="background-color: #f1f2f6; text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px; border-top: 1px solid #bdc3c7; border-bottom: 1px solid #bdc3c7;">ИТОГО ЗА ДЕНЬ:</td>
+          <td colspan="3" style="background-color: white; font-weight: bold; color: ${color}; font-size: 13px; padding: 8px; border-left: 1px solid #bdc3c7; border-top: 1px solid #bdc3c7; border-bottom: 1px solid #bdc3c7;">
+            ${label} ${sign}${Math.abs(dayBalance).toFixed(2)}€
           </td>
         </tr>
       `;
 
       const totalsRow = `
-        <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">ОБЩЕЕ ЗА ДЕНЬ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; ">
-            ${dayTotal.toFixed(2)}€
+        <tr class="daily-totals-row" style="page-break-inside: avoid;">
+          <td colspan="4" style="background-color: #f1f2f6; text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">
+            <span style="margin-right: 15px;">ОБЩЕЕ: <span style="color: #34495e;">${dayTotal.toFixed(2)}€</span></span>
+            <span style="margin-right: 15px;">КАРТОЙ: <span style="color: #34495e;">${dayTotalCard.toFixed(2)}€</span></span>
+            <span>НАЛИЧНЫМИ: <span style="color: #34495e;">${dayTotalCash.toFixed(2)}€</span></span>
           </td>
-        </tr>
-        <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">КАРТОЙ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7; ">
-            ${dayTotalCard.toFixed(2)}€
-          </td>
-        </tr>
-        <tr class="daily-totals-row" style="background-color: #f1f2f6; page-break-inside: avoid;">
-          <td colspan="4" style="text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">НАЛИЧНЫМИ:</td>
-          <td colspan="3" style="font-weight: bold; color: #34495e; font-size: 13px; padding: 8px; background-color: white; border-left: 1px solid #bdc3c7">
-            ${dayTotalCash.toFixed(2)}€
-          </td>
+          <td colspan="3" style="background-color: white; padding: 8px; border-left: 1px solid #bdc3c7;"></td>
         </tr>
       `;
 

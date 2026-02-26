@@ -153,12 +153,11 @@ export function useExportData() {
 
       const totalsRow = `
         <tr class="daily-totals-row" style="page-break-inside: avoid;">
-          <td colspan="4" style="background-color: #f1f2f6; text-align: right; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 8px;">
-            <span style="margin-right: 15px;">ОБЩЕЕ: <span style="color: #34495e;">${dayTotal.toFixed(2)}€</span></span>
-            <span style="margin-right: 15px;">КАРТОЙ: <span style="color: #34495e;">${dayTotalCard.toFixed(2)}€</span></span>
-            <span>НАЛИЧНЫМИ: <span style="color: #34495e;">${dayTotalCash.toFixed(2)}€</span></span>
+          <td colspan="7" style="background-color: #f1f2f6; text-align: center; font-weight: bold; color: #7f8c8d; font-size: 11px; padding: 10px; border: 1px solid #bdc3c7;">
+            <span style="margin-right: 40px;">ОБЩЕЕ: <span style="color: #34495e; font-size: 12px;">${dayTotal.toFixed(2)}€</span></span>
+            <span style="margin-right: 40px;">КАРТОЙ: <span style="color: #34495e; font-size: 12px;">${dayTotalCard.toFixed(2)}€</span></span>
+            <span>НАЛИЧНЫМИ: <span style="color: #34495e; font-size: 12px;">${dayTotalCash.toFixed(2)}€</span></span>
           </td>
-          <td colspan="3" style="background-color: white; padding: 8px; border-left: 1px solid #bdc3c7;"></td>
         </tr>
       `;
 
